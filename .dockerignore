@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+.vscode/
+.git/
+.claude/
+wwwroot/models3d/
+wwwroot/uploads/
+appsettings.json
+appsettings.Development.json
