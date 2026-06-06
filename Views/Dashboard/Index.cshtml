@@ -1,0 +1,276 @@
+@using CarWebsite.Models
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Dashboard Tổng Quan";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    long revenueMonth = ViewBag.RevenueThisMonth ?? 0;
+    int deliveredMonth = ViewBag.DeliveredThisMonth ?? 0;
+    int carsInStock = ViewBag.CarsInStock ?? 0;
+    int newCustomers = ViewBag.NewCustomersThisMonth ?? 0;
+
+    var recentOrders = (ViewBag.RecentOrders as List<Order>) ?? [];
+
+    // Chart data
+    var revenueByMonth = ViewBag.RevenueByMonth as dynamic;
+    var salesByType    = ViewBag.SalesByType as dynamic;
+    var kpiData        = ViewBag.KpiData as dynamic;
+    var staffMap       = (ViewBag.StaffMap as Dictionary<Guid, string>) ?? [];
+
+    // Build line chart labels & data (12 tháng)
+    var now = DateTime.UtcNow;
+    var lineLabels = new List<string>();
+    var lineData   = new List<long>();
+    for (int i = 11; i >= 0; i--)
+    {
+        var d = now.AddMonths(-i);
+        lineLabels.Add($"T{d.Month}/{d.Year % 100:D2}");
+        long val = 0;
+        if (revenueByMonth != null)
+            foreach (var r in revenueByMonth)
+                if ((int)r.Year == d.Year && (int)r.Month == d.Month) { val = (long)r.Total; break; }
+        lineData.Add(val);
+    }
+
+    // Build pie chart
+    var pieLabels = new List<string>();
+    var pieData   = new List<long>();
+    if (salesByType != null)
+        foreach (var s in salesByType) { pieLabels.Add((string)s.Type); pieData.Add((long)s.Total); }
+}
+
+@* ── 4 Thẻ KPI ───────────────────────────────────────────────────────── *@
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Tổng Quan — Tháng @now.Month/@now.Year</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Dữ liệu thời gian thực theo tháng hiện tại</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Doanh thu tháng</span>
+            <div class="w-9 h-9 bg-green-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+        <p class="text-2xl font-black text-navy">@((revenueMonth / 1_000_000).ToString("N0"))M</p>
+        <p class="text-xs text-gray-400 mt-1">@revenueMonth.ToString("N0") ₫</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Xe đã giao</span>
+            <div class="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            </div>
+        </div>
+        <p class="text-2xl font-black text-navy">@deliveredMonth</p>
+        <p class="text-xs text-gray-400 mt-1">đơn hoàn tất tháng này</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Xe trong kho</span>
+            <div class="w-9 h-9 bg-amber-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+            </div>
+        </div>
+        <p class="text-2xl font-black text-navy">@carsInStock</p>
+        <p class="text-xs text-gray-400 mt-1">xe sẵn sàng bán</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="flex items-center justify-between mb-3">
+            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Khách hàng mới</span>
+            <div class="w-9 h-9 bg-purple-100 rounded-xl flex items-center justify-center">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            </div>
+        </div>
+        <p class="text-2xl font-black text-navy">@newCustomers</p>
+        <p class="text-xs text-gray-400 mt-1">đăng ký tháng này</p>
+    </div>
+</div>
+
+@* ── 2 Biểu đồ ───────────────────────────────────────────────────────── *@
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    @* Line Chart *@
+    <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="font-bold text-navy">Xu hướng Doanh thu</h2>
+                <p class="text-xs text-gray-400">12 tháng gần nhất</p>
+            </div>
+        </div>
+        <canvas id="lineChart" height="220"></canvas>
+    </div>
+
+    @* Pie Chart *@
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+        <div class="mb-4">
+            <h2 class="font-bold text-navy">Tỷ trọng Doanh số</h2>
+            <p class="text-xs text-gray-400">Phân loại theo dòng xe</p>
+        </div>
+        <canvas id="pieChart" height="220"></canvas>
+        <div class="mt-3 space-y-1.5" id="pieLegend"></div>
+    </div>
+</div>
+
+@* ── KPI Nhân viên + Đơn hàng gần đây ─────────────────────────────── *@
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    @* KPI Ranking *@
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center gap-2">
+            <span class="text-lg">🏆</span>
+            <h2 class="font-bold text-navy">Xếp hạng KPI Kinh doanh</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase w-10">#</th>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nhân viên</th>
+                        <th class="text-center px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Hợp đồng</th>
+                        <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Doanh thu</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @if (kpiData != null)
+                    {
+                        int rank = 1;
+                        foreach (var k in kpiData)
+                        {
+                            var sName = staffMap.TryGetValue((Guid)k.StaffId, out var n) ? n : "—";
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-5 py-3.5">
+                                    <span class="text-xs font-black @(rank == 1 ? "text-yellow-500" : rank == 2 ? "text-gray-400" : rank == 3 ? "text-amber-700" : "text-gray-400")">
+                                        @(rank == 1 ? "🥇" : rank == 2 ? "🥈" : rank == 3 ? "🥉" : rank.ToString())
+                                    </span>
+                                </td>
+                                <td class="px-5 py-3.5 font-semibold text-navy">@sName</td>
+                                <td class="px-4 py-3.5 text-center">
+                                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-full">@((int)k.Count)</span>
+                                </td>
+                                <td class="px-5 py-3.5 text-right font-semibold text-green-700 text-sm">
+                                    @(((long)k.Revenue / 1_000_000).ToString("N0"))M ₫
+                                </td>
+                            </tr>
+                            rank++;
+                        }
+                    }
+                    @if (kpiData == null || !(bool)Enumerable.Any(kpiData))
+                    {
+                        <tr><td colspan="4" class="px-5 py-8 text-center text-gray-400 text-xs">Chưa có dữ liệu KPI.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @* Đơn hàng gần đây *@
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center gap-2">
+            <span class="text-lg">📋</span>
+            <h2 class="font-bold text-navy">Đơn hàng gần đây</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Mã đơn</th>
+                        <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                        <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                        <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Giá trị</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach (var o in recentOrders)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-mono text-xs text-navy font-semibold">@o.OrderCode</td>
+                            <td class="px-4 py-3 text-gray-700 text-xs">@o.CarName</td>
+                            <td class="px-4 py-3">
+                                <span class="text-xs px-2 py-0.5 rounded-full font-semibold
+                                    @(o.Status == "Hoàn tất" ? "bg-green-100 text-green-700" :
+                                      o.Status == "Đã đặt cọc" ? "bg-blue-100 text-blue-700" :
+                                      "bg-gray-100 text-gray-600")">
+                                    @o.Status
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-right text-xs font-semibold text-navy">@((o.Amount / 1_000_000).ToString("N0"))M</td>
+                        </tr>
+                    }
+                    @if (!recentOrders.Any())
+                    {
+                        <tr><td colspan="4" class="px-4 py-8 text-center text-gray-400 text-xs">Chưa có đơn hàng.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const lineLabels = @Html.Raw(JsonSerializer.Serialize(lineLabels));
+const lineData   = @Html.Raw(JsonSerializer.Serialize(lineData));
+const pieLabels  = @Html.Raw(JsonSerializer.Serialize(pieLabels));
+const pieData    = @Html.Raw(JsonSerializer.Serialize(pieData));
+
+// Line Chart
+new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+        labels: lineLabels,
+        datasets: [{
+            label: 'Doanh thu (₫)',
+            data: lineData,
+            borderColor: '#d71920',
+            backgroundColor: 'rgba(215,25,32,0.08)',
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: '#d71920',
+            tension: 0.35,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: {
+            callbacks: { label: ctx => (ctx.raw / 1_000_000).toLocaleString('vi-VN') + 'M ₫' }
+        }},
+        scales: {
+            y: { ticks: { callback: v => (v/1_000_000).toFixed(0) + 'M' }, grid: { color: '#f3f4f6' } },
+            x: { grid: { display: false } }
+        }
+    }
+});
+
+// Pie Chart
+const pieColors = ['#d71920','#2563eb','#d97706','#16a34a','#7c3aed','#0891b2','#be185d'];
+const pieChart = new Chart(document.getElementById('pieChart'), {
+    type: 'doughnut',
+    data: {
+        labels: pieLabels,
+        datasets: [{ data: pieData, backgroundColor: pieColors, borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false }, tooltip: {
+            callbacks: { label: ctx => ctx.label + ': ' + (ctx.raw / 1_000_000).toLocaleString('vi-VN') + 'M ₫' }
+        }}
+    }
+});
+
+// Custom legend
+const legend = document.getElementById('pieLegend');
+pieLabels.forEach((l, i) => {
+    const total = pieData.reduce((a, b) => a + b, 0);
+    const pct = total > 0 ? ((pieData[i] / total) * 100).toFixed(1) : '0';
+    legend.innerHTML += `<div class="flex items-center justify-between text-xs">
+        <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:${pieColors[i]}"></span>${l}</span>
+        <span class="font-semibold text-gray-700">${pct}%</span>
+    </div>`;
+});
+if (!pieLabels.length) legend.innerHTML = '<p class="text-xs text-gray-400 text-center py-2">Chưa có dữ liệu</p>';
+</script>
+}

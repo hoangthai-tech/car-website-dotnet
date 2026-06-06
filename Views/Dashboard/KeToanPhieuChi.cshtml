@@ -1,0 +1,94 @@
+@using CarWebsite.Models
+@model List<PaymentVoucher>
+@{
+    ViewData["Title"] = "Phiếu Chi";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var tongChi = (long)(ViewBag.TongChi ?? 0L);
+}
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Quản Lý Phiếu Chi</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Tổng chi: <strong class="text-red-600">@((tongChi / 1_000_000).ToString("N0")) triệu ₫</strong></p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Tạo phiếu chi
+    </button>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Mã phiếu</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Danh mục</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Đối tượng chi</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Nội dung</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Số tiền</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Người lập</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var v in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3.5 font-mono text-xs font-bold text-navy">@v.VoucherCode</td>
+                        <td class="px-4 py-3.5 text-xs"><span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-md font-semibold">@v.Category</span></td>
+                        <td class="px-4 py-3.5 font-semibold text-gray-700 text-xs">@v.Recipient</td>
+                        <td class="px-4 py-3.5 text-gray-600 text-xs max-w-48 truncate">@v.Description</td>
+                        <td class="px-4 py-3.5 text-right font-semibold text-red-600 text-xs">−@((v.Amount / 1_000_000).ToString("N0"))M ₫</td>
+                        <td class="px-4 py-3.5 text-xs text-gray-500">@(v.CreatedBy?.Name ?? "—")</td>
+                        <td class="px-4 py-3.5 text-xs text-gray-400">@v.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</td>
+                    </tr>
+                }
+                @if (!Model.Any()) { <tr><td colspan="7" class="px-4 py-10 text-center text-gray-400">Chưa có phiếu chi nào.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Add Voucher Modal *@
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-navy">Tạo Phiếu Chi Mới</h2>
+            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="KeToanPhieuChiAdd" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Danh mục <span class="text-red-500">*</span></label>
+                    <select name="category" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option value="Lương">Lương</option>
+                        <option value="Hoa hồng">Hoa hồng</option>
+                        <option value="Vật tư">Vật tư</option>
+                        <option value="Tiếp khách">Tiếp khách</option>
+                        <option value="Công tác phí">Công tác phí</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Số tiền (₫) <span class="text-red-500">*</span></label>
+                    <input type="number" name="amount" required min="1" step="1000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Đối tượng chi <span class="text-red-500">*</span></label>
+                <input type="text" name="recipient" required placeholder="Tên người nhận / đơn vị..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nội dung chi <span class="text-red-500">*</span></label>
+                <textarea name="description" required rows="2" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm">Tạo phiếu chi</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,63 @@
+@using CarWebsite.Models
+@model List<DiscountRequest>
+@{ ViewData["Title"] = "Khuyến Mãi"; Layout = "~/Views/Shared/_DashboardLayout.cshtml"; var role = Context.Session.GetString("UserRole"); }
+
+<h1 class="text-2xl font-black text-navy mb-6">Yêu Cầu Chiết Khấu</h1>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Giảm giá</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Lý do</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nhân viên</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    @if (role == "admin" || role == "manager") { <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Duyệt</th> }
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var r in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-4 font-semibold text-navy">@r.CarName</td>
+                        <td class="px-5 py-4 text-brand font-bold">@r.Discount.ToString("N0") ₫</td>
+                        <td class="px-5 py-4 text-gray-600 max-w-xs truncate">@r.Reason</td>
+                        <td class="px-5 py-4">@r.StaffName</td>
+                        <td class="px-5 py-4">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                @(r.Status == "approved" ? "bg-green-100 text-green-700" :
+                                  r.Status == "rejected" ? "bg-red-100 text-red-700" :
+                                  "bg-yellow-100 text-yellow-700")">
+                                @(r.Status == "approved" ? "Đã duyệt" : r.Status == "rejected" ? "Từ chối" : "Chờ duyệt")
+                            </span>
+                        </td>
+                        @if (role == "admin" || role == "manager")
+                        {
+                            <td class="px-5 py-4 text-right">
+                                @if (r.Status == "pending")
+                                {
+                                    <form asp-action="KhuyenMaiReview" asp-controller="Dashboard" method="post" class="space-y-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@r.Id" />
+                                        <textarea name="note" rows="2" placeholder="Ghi chú (tuỳ chọn)"
+                                                  class="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand/30 resize-none min-w-[180px]"></textarea>
+                                        <div class="flex gap-2 justify-end">
+                                            <button name="status" value="approved" type="submit" class="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1.5 rounded-lg font-semibold">Duyệt</button>
+                                            <button name="status" value="rejected" type="submit" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg font-semibold">Từ chối</button>
+                                        </div>
+                                    </form>
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="px-5 py-8 text-center text-gray-400">Chưa có yêu cầu nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

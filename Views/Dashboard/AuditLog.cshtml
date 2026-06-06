@@ -1,0 +1,72 @@
+@using CarWebsite.Models
+@model List<AuditLog>
+@{
+    ViewData["Title"] = "Nhật Ký Hệ Thống";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    string BadgeClass(string action) => action switch {
+        var a when a.StartsWith("Thêm") || a.StartsWith("Upload") => "bg-green-100 text-green-700",
+        var a when a.StartsWith("Sửa") || a.StartsWith("Cập nhật") || a.StartsWith("Duyệt") || a.StartsWith("Mở khóa") => "bg-blue-100 text-blue-700",
+        var a when a.StartsWith("Xóa") => "bg-red-100 text-red-700",
+        var a when a.StartsWith("Khóa") => "bg-yellow-100 text-yellow-700",
+        _ => "bg-gray-100 text-gray-600"
+    };
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Nhật Ký Hệ Thống</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Ghi lại toàn bộ hành động của nhân viên — @Model.Count bản ghi gần nhất</p>
+    </div>
+    <div class="flex gap-2">
+        <span class="text-xs bg-green-100 text-green-700 px-2.5 py-1.5 rounded-lg font-semibold">Thêm</span>
+        <span class="text-xs bg-blue-100 text-blue-700 px-2.5 py-1.5 rounded-lg font-semibold">Sửa / Duyệt</span>
+        <span class="text-xs bg-red-100 text-red-700 px-2.5 py-1.5 rounded-lg font-semibold">Xóa</span>
+        <span class="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1.5 rounded-lg font-semibold">Khóa</span>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Thời gian</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Người thực hiện</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hành động</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Đối tượng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Chi tiết</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var log in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3.5 text-gray-400 text-xs whitespace-nowrap">
+                            <div class="font-mono">@log.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</div>
+                            <div class="text-gray-300">@log.CreatedAt.ToLocalTime().ToString("HH:mm:ss")</div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="font-semibold text-navy">@log.UserName</span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold @BadgeClass(log.Action)">
+                                @log.Action
+                            </span>
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-700 font-medium">@log.Target</td>
+                        <td class="px-5 py-3.5 text-gray-400 text-xs max-w-xs truncate">@log.Detail</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="px-5 py-12 text-center">
+                            <p class="text-gray-400">Chưa có nhật ký nào.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

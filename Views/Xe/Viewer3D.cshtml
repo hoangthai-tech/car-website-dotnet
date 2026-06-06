@@ -1,0 +1,66 @@
+@model CarWebsite.Models.Car
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@Model.Name — Xem 3D</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0f172a; color: white; font-family: sans-serif; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 20px;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            flex-shrink: 0;
+        }
+        header a {
+            color: rgba(255,255,255,0.6); text-decoration: none; font-size: 13px;
+            display: flex; align-items: center; gap: 6px;
+            transition: color 0.2s;
+        }
+        header a:hover { color: white; }
+        header h1 { font-size: 15px; font-weight: 700; color: white; }
+        header span { font-size: 12px; color: rgba(255,255,255,0.4); margin-left: 8px; }
+
+        model-viewer {
+            flex: 1;
+            width: 100%;
+            --poster-color: #0f172a;
+            --progress-bar-color: #D71920;
+            --progress-mask: transparent;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="/xe/@Model.Slug">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Quay lại
+        </a>
+        <h1>@Model.Name <span>• Xem 3D</span></h1>
+        <span style="font-size:12px; color:rgba(255,255,255,0.35)">Kéo xoay • Cuộn zoom</span>
+    </header>
+
+    <model-viewer
+        src="@Model.Model3DUrl"
+        alt="@Model.Name"
+        auto-rotate
+        camera-controls
+        shadow-intensity="1.5"
+        shadow-softness="0.8"
+        tone-mapping="commerce"
+        loading="eager"
+        ar>
+    </model-viewer>
+</body>
+</html>

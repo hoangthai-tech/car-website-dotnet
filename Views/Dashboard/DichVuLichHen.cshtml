@@ -1,0 +1,92 @@
+@using CarWebsite.Models
+@model List<AuditLog>
+@{
+    ViewData["Title"] = "Lịch Hẹn Bảo Dưỡng — Dịch Vụ";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Lịch Hẹn Bảo Dưỡng / Sửa Chữa</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Quản lý lịch hẹn của khách hàng</p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+            class="bg-brand text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Tạo lịch hẹn
+    </button>
+</div>
+
+@* Tóm tắt *@
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">📅</div>
+        <p class="text-xs text-gray-400 mb-1">Tổng lịch hẹn</p>
+        <p class="text-2xl font-black text-navy">@Model.Count</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">🔧</div>
+        <p class="text-xs text-gray-400 mb-1">Hôm nay</p>
+        <p class="text-2xl font-black text-blue-600">@Model.Count(l => l.CreatedAt.Date == DateTime.UtcNow.Date)</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">✅</div>
+        <p class="text-xs text-gray-400 mb-1">Tuần này</p>
+        <p class="text-2xl font-black text-green-600">@Model.Count(l => l.CreatedAt >= DateTime.UtcNow.AddDays(-7))</p>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+        <div class="text-5xl mb-4">📅</div>
+        <p class="text-gray-500 font-semibold">Chưa có lịch hẹn bảo dưỡng nào.</p>
+        <p class="text-gray-400 text-sm mt-1">Nhấn "Tạo lịch hẹn" để thêm mới.</p>
+    </div>
+}
+else
+{
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày hẹn</th>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nội dung</th>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nhân viên</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach (var log in Model)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-5 py-3.5 text-gray-500 text-xs">@log.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="px-5 py-3.5 font-semibold text-navy">@(log.Target ?? "—")</td>
+                            <td class="px-5 py-3.5 text-gray-600">@log.Action</td>
+                            <td class="px-5 py-3.5 text-gray-400">@log.UserName</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@* Modal tạo lịch hẹn (demo UI) *@
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-black text-navy">Tạo Lịch Hẹn Mới</h2>
+            <button onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="space-y-4 text-sm text-gray-500 text-center py-6">
+            <div class="text-4xl">🚧</div>
+            <p class="font-semibold">Tính năng đang phát triển</p>
+            <p>Module lịch hẹn bảo dưỡng sẽ được tích hợp đầy đủ trong phiên bản tiếp theo với bảng <code class="bg-gray-100 px-1 rounded">ServiceAppointment</code>.</p>
+        </div>
+    </div>
+</div>

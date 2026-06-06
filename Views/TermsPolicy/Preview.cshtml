@@ -1,0 +1,35 @@
+@model CarWebsite.Models.TermsOfService
+@{ ViewData["Title"] = "Xem trước điều khoản " + Model.Version; Layout = "~/Views/Shared/_DashboardLayout.cshtml"; }
+
+<div class="max-w-4xl mx-auto space-y-6">
+    <div class="flex items-center gap-4">
+        <a asp-controller="TermsPolicy" asp-action="Index"
+           class="text-gray-500 hover:text-navy transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-black text-navy">Xem trước: @Model.Version</h1>
+            <p class="text-gray-500 text-sm">Hiệu lực: @Model.EffectiveDate.ToString("dd/MM/yyyy") | Xuất bản: @Model.PublishedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+        @if (Model.IsActive)
+        {
+            <span class="ml-auto px-3 py-1 bg-green-100 text-green-700 text-sm font-bold rounded-full">ĐANG ÁP DỤNG</span>
+        }
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm p-8 prose max-w-none">
+        @Html.Raw(Model.Content)
+    </div>
+</div>
+
+<style>
+    .prose h2 { font-size: 1.3rem; font-weight: 800; color: #001C3D; margin: 1.5rem 0 0.5rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.4rem; }
+    .prose h3 { font-size: 1.05rem; font-weight: 700; color: #001C3D; margin: 1.2rem 0 0.4rem; }
+    .prose p  { margin: 0.5rem 0; color: #374151; line-height: 1.7; }
+    .prose ul { margin: 0.5rem 0 0.5rem 1.5rem; list-style: disc; color: #374151; }
+    .prose li { margin: 0.3rem 0; line-height: 1.6; }
+    .prose hr { border-color: #e5e7eb; margin: 1.5rem 0; }
+    .prose strong { color: #001C3D; }
+</style>

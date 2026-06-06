@@ -1,0 +1,261 @@
+@using CarWebsite.Models
+@model List<User>
+@{
+    ViewData["Title"] = "Quản Lý Nhân Sự";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-4 text-sm">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">@TempData["Error"]</div>
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Quản Lý Nhân Sự</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Thêm, sửa, phân quyền, khóa/mở khóa tài khoản nhân viên</p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+            class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Thêm nhân viên
+    </button>
+</div>
+
+@* Thống kê theo bộ phận *@
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+    @foreach (var dept in new[]
+    {
+        (Roles.Admin,      "Quản trị",   "bg-red-100 text-red-700"),
+        (Roles.Sale,       "Kinh doanh", "bg-blue-100 text-blue-700"),
+        (Roles.Warehouse,  "Kho",        "bg-amber-100 text-amber-700"),
+        (Roles.Accounting, "Kế toán",    "bg-green-100 text-green-700"),
+        (Roles.Service,    "Kỹ thuật",   "bg-purple-100 text-purple-700")
+    })
+    {
+        var total  = Model.Count(u => u.Role == dept.Item1);
+        var locked = Model.Count(u => u.Role == dept.Item1 && !u.IsActive);
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+            <span class="text-xs px-2 py-0.5 rounded-full font-semibold @dept.Item3">@dept.Item2</span>
+            <p class="text-2xl font-black text-navy mt-2">@total</p>
+            @if (locked > 0)
+            {
+                <p class="text-xs text-red-500 mt-0.5">@locked bị khóa</p>
+            }
+        </div>
+    }
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nhân viên</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Email</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Chi nhánh</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Bộ phận</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var u in Model)
+                {
+                    <tr class="hover:bg-gray-50 @(!u.IsActive ? "opacity-60" : "")">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-3">
+                                @if (!string.IsNullOrEmpty(u.Avatar))
+                                {
+                                    <img src="@u.Avatar" alt="" class="w-9 h-9 rounded-full object-cover" />
+                                }
+                                else
+                                {
+                                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                                         style="background:@(u.Role == Roles.Admin ? "#d71920" : u.Role == Roles.Sale ? "#2563eb" : u.Role == Roles.Warehouse ? "#d97706" : u.Role == Roles.Accounting ? "#16a34a" : "#7c3aed")">
+                                        @u.Name[0]
+                                    </div>
+                                }
+                                <div>
+                                    <span class="font-semibold text-navy">@u.Name</span>
+                                    @if (!u.IsActive)
+                                    {
+                                        <span class="ml-1.5 text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-semibold">Bị khóa</span>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-gray-600">@u.Email</td>
+                        <td class="px-5 py-4 text-gray-600">@u.Branch</td>
+                        <td class="px-5 py-4">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold @Roles.BadgeColor(u.Role)">
+                                @Roles.DisplayName(u.Role)
+                            </span>
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            @if (u.Role == Roles.Admin)
+                            {
+                                <span class="text-xs text-gray-400">—</span>
+                            }
+                            else if (u.IsActive)
+                            {
+                                <span class="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Hoạt động
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="inline-flex items-center gap-1 text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-semibold">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Bị khóa
+                                </span>
+                            }
+                        </td>
+                        <td class="px-5 py-4 text-right">
+                            @if (u.Role != Roles.Admin)
+                            {
+                                <div class="flex gap-2 justify-end">
+                                    <button onclick="openEditModal('@u.Id','@u.Name.Replace("'","\\'")', '@u.Role','@u.Branch')"
+                                            class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                        Sửa
+                                    </button>
+                                    @* Khóa / Mở khóa *@
+                                    <form asp-action="NhanSuToggleLock" asp-controller="Dashboard" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@u.Id" />
+                                        <button type="submit"
+                                                class="text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors @(u.IsActive ? "bg-yellow-100 hover:bg-yellow-200 text-yellow-700" : "bg-green-100 hover:bg-green-200 text-green-700")">
+                                            @(u.IsActive ? "Khóa" : "Mở khóa")
+                                        </button>
+                                    </form>
+                                    <form asp-action="NhanSuDelete" asp-controller="Dashboard" method="post" class="inline"
+                                          onsubmit="return confirm('Xóa nhân viên @u.Name?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@u.Id" />
+                                        <button type="submit" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="px-5 py-8 text-center text-gray-400">Chưa có nhân viên nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Modal Thêm nhân viên *@
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-black text-navy">Thêm Nhân Viên Mới</h2>
+            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form asp-action="NhanSuAdd" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Họ tên</label>
+                <input type="text" name="name" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" placeholder="Nguyễn Văn A" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                <input type="email" name="email" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mật khẩu</label>
+                <input type="password" name="password" required minlength="8" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" placeholder="Tối thiểu 8 ký tự" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bộ phận / Vai trò</label>
+                <select name="role" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                    <option value="@Roles.Sale">Kinh doanh</option>
+                    <option value="@Roles.Warehouse">Kho</option>
+                    <option value="@Roles.Accounting">Kế toán</option>
+                    <option value="@Roles.Service">Kỹ thuật &amp; Hậu mãi</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Chi nhánh</label>
+                <select name="branch" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                    <option>TP. Hồ Chí Minh</option>
+                    <option>Hà Nội</option>
+                    <option>Đà Nẵng</option>
+                    <option>Tất cả</option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')"
+                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm">Thêm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Modal Sửa nhân viên *@
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-black text-navy">Chỉnh Sửa Nhân Viên</h2>
+            <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form asp-action="NhanSuEdit" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="editId" />
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Họ tên</label>
+                <input type="text" name="name" id="editName" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Bộ phận / Chức vụ</label>
+                <select name="role" id="editRole" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                    <option value="@Roles.Sale">Kinh doanh</option>
+                    <option value="@Roles.Warehouse">Kho</option>
+                    <option value="@Roles.Accounting">Kế toán</option>
+                    <option value="@Roles.Service">Kỹ thuật &amp; Hậu mãi</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Chi nhánh</label>
+                <select name="branch" id="editBranch" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                    <option>TP. Hồ Chí Minh</option>
+                    <option>Hà Nội</option>
+                    <option>Đà Nẵng</option>
+                    <option>Tất cả</option>
+                </select>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')"
+                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openEditModal(id, name, role, branch) {
+    document.getElementById('editId').value     = id;
+    document.getElementById('editName').value   = name;
+    document.getElementById('editRole').value   = role;
+    document.getElementById('editBranch').value = branch;
+    document.getElementById('editModal').classList.remove('hidden');
+}
+</script>
+}

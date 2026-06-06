@@ -1,0 +1,393 @@
+@using CarWebsite.Models
+@model Car
+@{
+    ViewData["Title"] = Model.Name;
+    var related = ViewBag.RelatedCars as List<Car> ?? [];
+    var images = Model.Images;
+    var specs = Model.Specs;
+    var features = Model.Features;
+}
+
+
+<div class="pt-24 pb-16 min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        @* Breadcrumb *@
+        <nav class="text-sm text-gray-500 mb-6">
+            <a asp-controller="Home" asp-action="Index" class="hover:text-brand">Trang chủ</a>
+            <span class="mx-2">/</span>
+            <a asp-controller="Xe" asp-action="Index" class="hover:text-brand">Xe</a>
+            <span class="mx-2">/</span>
+            <span class="text-gray-800">@Model.Name</span>
+        </nav>
+
+        <div class="grid lg:grid-cols-2 gap-10 mb-12">
+            @* Images *@
+            <div>
+                <div class="rounded-2xl overflow-hidden mb-3 aspect-video bg-gray-100">
+                    <img src="@Model.Image" alt="@Model.Name" class="w-full h-full object-cover" id="main-img" />
+                </div>
+                <div class="flex gap-2 overflow-x-auto">
+                    @if (images.Any())
+                    {
+                        @foreach (var img in images)
+                        {
+                            <img src="@img" alt="" onclick="document.getElementById('main-img').src='@img'"
+                                 class="w-20 h-16 object-cover rounded-lg cursor-pointer border-2 border-transparent hover:border-brand transition-colors flex-shrink-0" />
+                        }
+                    }
+                    else
+                    {
+                        @for (int i = 0; i < 2; i++)
+                        {
+                            <div class="w-20 h-16 flex-shrink-0 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-0.5">
+                                <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span class="text-gray-300 text-xs leading-none">Trống</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            @* Info *@
+            <div>
+                @if (!string.IsNullOrEmpty(Model.Badge))
+                {
+                    <span class="inline-block bg-brand text-white text-xs font-bold px-3 py-1 rounded-full mb-3">@Model.Badge</span>
+                }
+                <h1 class="text-3xl sm:text-4xl font-black text-navy mb-2">@Model.Name</h1>
+                <p class="text-gray-400 mb-4">@Model.Brand • @Model.Year • @Model.Type</p>
+                <p class="text-4xl font-black text-brand mb-6">@Model.PriceDisplay</p>
+
+                @if (Model.RentalPricePerDay > 0)
+                {
+                    <div class="bg-brand/5 border border-brand/20 rounded-xl p-4 mb-6">
+                        <p class="text-sm text-gray-600">Giá thuê: <span class="font-bold text-brand">@(Model.RentalPricePerDay.ToString("N0")) ₫/ngày</span></p>
+                    </div>
+                }
+
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    @foreach (var spec in specs)
+                    {
+                        <div class="bg-white rounded-xl p-3 border border-gray-100">
+                            <p class="text-xs text-gray-400 mb-1">@TranslateSpec(spec.Key)</p>
+                            <p class="font-semibold text-navy text-sm">@spec.Value</p>
+                        </div>
+                    }
+                </div>
+
+                @if (features.Any())
+                {
+                    <div class="mb-6">
+                        <h3 class="font-bold text-navy mb-3">Tính năng nổi bật</h3>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var feat in features)
+                            {
+                                <span class="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">✓ @feat</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-3 text-sm">@TempData["Error"]</div>
+                }
+
+                <div class="flex gap-3 mb-3">
+                    <button onclick="document.getElementById('modal-datmua').classList.remove('hidden')"
+                            class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-colors text-sm">
+                        Đặt mua / Thuê xe
+                    </button>
+                    <a asp-controller="LienHe" asp-action="Index"
+                       class="flex-1 text-center border-2 border-navy hover:bg-navy hover:text-white text-navy font-bold py-3.5 rounded-xl transition-all text-sm">
+                        Liên hệ tư vấn
+                    </a>
+                </div>
+                <button
+                    data-slug="@Model.Slug"
+                    data-name="@Model.Name"
+                    data-price="@Model.PriceDisplay"
+                    data-image="@Model.Image"
+                    onclick="ssAddFromData(this)"
+                    class="w-full flex items-center justify-center gap-2 text-sm font-semibold text-navy/70 hover:text-brand border border-gray-200 hover:border-brand py-3 rounded-xl transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    Thêm vào danh sách so sánh
+                </button>
+
+                <div id="modal-datmua" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+                    <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
+                        <div id="datmua-form-panel">
+                            <h3 class="text-xl font-black text-navy mb-1">Đặt xe</h3>
+                            <p class="text-gray-500 text-sm mb-5">@Model.Name</p>
+                            <form id="form-datmua">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="carId" value="@Model.Id" />
+                                <div class="space-y-3 mb-5">
+                                    <label class="flex items-start gap-3 border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-brand transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand/5">
+                                        <input type="radio" name="orderType" value="buy" checked class="mt-0.5 accent-brand" />
+                                        <div>
+                                            <p class="font-bold text-navy text-sm">Mua xe</p>
+                                            <p class="text-brand font-black">@Model.PriceDisplay</p>
+                                        </div>
+                                    </label>
+                                    @if (Model.RentalPricePerDay > 0)
+                                    {
+                                        <label class="flex items-start gap-3 border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-brand transition-colors has-[:checked]:border-brand has-[:checked]:bg-brand/5">
+                                            <input type="radio" name="orderType" value="rent" class="mt-0.5 accent-brand" id="radio-rent" />
+                                            <div class="flex-1">
+                                                <p class="font-bold text-navy text-sm">Thuê xe / ngày</p>
+                                                <p class="text-brand font-black">@(Model.RentalPricePerDay.ToString("N0")) ₫/ngày</p>
+                                            </div>
+                                        </label>
+                                        <div id="rental-dates" class="hidden space-y-3 px-1">
+                                            <div class="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Ngày nhận xe</label>
+                                                    <input type="date" name="rentalStartDate" id="rental-start"
+                                                           min="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                                           class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Ngày trả xe</label>
+                                                    <input type="date" name="rentalEndDate" id="rental-end"
+                                                           min="@DateTime.Now.AddDays(1).ToString("yyyy-MM-dd")"
+                                                           class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                                                </div>
+                                            </div>
+                                            <div id="rental-total" class="hidden bg-brand/5 border border-brand/20 rounded-xl px-4 py-2.5 text-sm">
+                                                <span class="text-gray-600">Tổng ước tính: </span>
+                                                <span id="rental-total-val" class="font-black text-brand"></span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div id="datmua-error" class="hidden bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-3 text-sm"></div>
+                                <div class="flex gap-3">
+                                    <button type="button" onclick="document.getElementById('modal-datmua').classList.add('hidden')"
+                                            class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-3 rounded-xl transition-colors text-sm">
+                                        Huỷ
+                                    </button>
+                                    <button type="submit" id="btn-datmua"
+                                            class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors text-sm">
+                                        Xác nhận
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <div id="datmua-success-panel" class="hidden text-center py-4">
+                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                            <h3 class="text-xl font-black text-navy mb-2">Đặt xe thành công!</h3>
+                            <p id="datmua-success-msg" class="text-gray-600 text-sm mb-1"></p>
+                            <p class="text-xs text-gray-400 mb-5">Mã đơn hàng: <span id="datmua-order-code" class="font-bold text-navy"></span></p>
+                            <div class="flex gap-3">
+                                <button onclick="document.getElementById('modal-datmua').classList.add('hidden')"
+                                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-3 rounded-xl transition-colors text-sm">
+                                    Đóng
+                                </button>
+                                <a href="/Profile/Orders"
+                                   class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors text-sm text-center">
+                                    Xem đơn hàng
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── 3D VIEWER (embedded) ── *@
+        @if (!string.IsNullOrEmpty(Model.Model3DUrl))
+        {
+            <div class="mb-12">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-2xl font-black text-navy flex items-center gap-2">
+                        Khám Phá 3D
+                        <span class="bg-brand/10 text-brand text-xs font-bold px-2.5 py-0.5 rounded-full">360°</span>
+                    </h2>
+                    <a href="/xe/@Model.Slug/3d" target="_blank"
+                       class="flex items-center gap-1.5 text-sm text-brand font-semibold hover:underline">
+                        Toàn màn hình
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="rounded-2xl overflow-hidden relative" style="height:480px;background:#0f172a;">
+                    <model-viewer
+                        src="@Model.Model3DUrl"
+                        alt="@Model.Name"
+                        auto-rotate
+                        auto-rotate-delay="1000"
+                        rotation-per-second="20deg"
+                        camera-controls
+                        touch-action="pan-y"
+                        shadow-intensity="1.8"
+                        shadow-softness="0.9"
+                        tone-mapping="commerce"
+                        environment-image="neutral"
+                        loading="eager"
+                        ar
+                        ar-modes="webxr scene-viewer quick-look"
+                        style="width:100%;height:100%;--poster-color:#0f172a;--progress-bar-color:#D71920;--progress-mask:transparent;">
+
+                        @* Nút AR *@
+                        <button slot="ar-button"
+                                class="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm hover:bg-white text-navy text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-2 transition-all shadow-lg border border-white/20">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                            </svg>
+                            Xem AR
+                        </button>
+                    </model-viewer>
+
+                    @* Hướng dẫn thao tác *@
+                    <div class="absolute top-4 left-4 text-white/40 text-xs pointer-events-none flex items-center gap-3">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                            Kéo để xoay
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/></svg>
+                            Cuộn để zoom
+                        </span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* Related *@
+        @if (related.Any())
+        {
+            <div>
+                <h2 class="text-2xl font-black text-navy mb-6">Xe Cùng Phân Khúc</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    @foreach (var car in related)
+                    {
+                        <a asp-controller="Xe" asp-action="Detail" asp-route-slug="@car.Slug"
+                           class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100">
+                            <div class="h-44 overflow-hidden">
+                                <img src="@car.Image" alt="@car.Name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                            </div>
+                            <div class="p-4">
+                                <h3 class="font-bold text-navy mb-1 group-hover:text-brand transition-colors">@car.Name</h3>
+                                <p class="text-brand font-black">@car.PriceDisplay</p>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Head {
+    @if (!string.IsNullOrEmpty(Model.Model3DUrl))
+    {
+        <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+    }
+}
+
+@section Scripts {
+<script>
+(function () {
+    const modal = document.getElementById('modal-datmua');
+    const form = document.getElementById('form-datmua');
+    const btnSubmit = document.getElementById('btn-datmua');
+    const errorBox = document.getElementById('datmua-error');
+    const formPanel = document.getElementById('datmua-form-panel');
+    const successPanel = document.getElementById('datmua-success-panel');
+
+    // Rental date pickers
+    const dailyRate = @Model.RentalPricePerDay;
+    const rentalDates = document.getElementById('rental-dates');
+    const rentalTotal = document.getElementById('rental-total');
+    const rentalTotalVal = document.getElementById('rental-total-val');
+    const startInput = document.getElementById('rental-start');
+    const endInput = document.getElementById('rental-end');
+
+    document.querySelectorAll('input[name="orderType"]').forEach(r => {
+        r.addEventListener('change', function () {
+            if (this.value === 'rent') rentalDates?.classList.remove('hidden');
+            else rentalDates?.classList.add('hidden');
+        });
+    });
+
+    function calcTotal() {
+        if (!startInput?.value || !endInput?.value) { rentalTotal?.classList.add('hidden'); return; }
+        const days = Math.round((new Date(endInput.value) - new Date(startInput.value)) / 86400000);
+        if (days < 1) { rentalTotal?.classList.add('hidden'); return; }
+        rentalTotalVal.textContent = (days * dailyRate).toLocaleString('vi-VN') + ' ₫ (' + days + ' ngày)';
+        rentalTotal?.classList.remove('hidden');
+        if (startInput.value) endInput.min = startInput.value;
+    }
+    startInput?.addEventListener('change', calcTotal);
+    endInput?.addEventListener('change', calcTotal);
+
+    // Reset modal state each time it opens
+    document.querySelector('[onclick*="modal-datmua"]')?.addEventListener('click', function () {
+        formPanel.classList.remove('hidden');
+        successPanel.classList.add('hidden');
+        errorBox.classList.add('hidden');
+        btnSubmit.disabled = false;
+        btnSubmit.textContent = 'Xác nhận';
+    });
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        errorBox.classList.add('hidden');
+        btnSubmit.disabled = true;
+        btnSubmit.textContent = 'Đang xử lý...';
+
+        try {
+            const res = await fetch('/Xe/DatMua', {
+                method: 'POST',
+                body: new FormData(form)
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                document.getElementById('datmua-success-msg').textContent = data.message;
+                document.getElementById('datmua-order-code').textContent = data.orderCode;
+                formPanel.classList.add('hidden');
+                successPanel.classList.remove('hidden');
+            } else if (data.requireLogin) {
+                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+            } else {
+                errorBox.textContent = data.error || 'Có lỗi xảy ra. Vui lòng thử lại.';
+                errorBox.classList.remove('hidden');
+                btnSubmit.disabled = false;
+                btnSubmit.textContent = 'Xác nhận';
+            }
+        } catch {
+            errorBox.textContent = 'Không thể kết nối. Vui lòng thử lại.';
+            errorBox.classList.remove('hidden');
+            btnSubmit.disabled = false;
+            btnSubmit.textContent = 'Xác nhận';
+        }
+    });
+})();
+</script>
+}
+
+@functions {
+    static string TranslateSpec(string key) => key switch
+    {
+        "engine" => "Động cơ",
+        "power" => "Công suất",
+        "torque" => "Mô-men xoắn",
+        "acceleration" => "Tăng tốc",
+        "topSpeed" => "Tốc độ tối đa",
+        "fuelConsumption" => "Tiêu thụ nhiên liệu",
+        "transmission" => "Hộp số",
+        "seats" => "Số chỗ",
+        _ => key
+    };
+}

@@ -1,0 +1,49 @@
+@using CarWebsite.Models
+@model List<Order>
+@{ ViewData["Title"] = "Đơn Hàng Của Tôi"; }
+
+<div class="pt-24 pb-16 min-h-screen bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-4 mb-8">
+            <a asp-controller="Profile" asp-action="Index" class="text-brand hover:underline text-sm">← Hồ sơ</a>
+            <h1 class="text-2xl font-black text-navy">Đơn Hàng Của Tôi</h1>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="bg-white rounded-2xl p-16 text-center shadow-sm">
+                <p class="text-5xl mb-4">📋</p>
+                <p class="text-gray-500 text-lg mb-4">Bạn chưa có đơn hàng nào.</p>
+                <a asp-controller="Xe" asp-action="Index" class="inline-block bg-brand hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+                    Khám phá xe ngay
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="space-y-4">
+                @foreach (var o in Model)
+                {
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-start justify-between mb-3">
+                            <div>
+                                <p class="font-mono text-xs text-gray-400 mb-1">@o.OrderCode</p>
+                                <h3 class="font-bold text-navy text-lg">@o.CarName</h3>
+                            </div>
+                            <span class="text-xs px-3 py-1.5 rounded-full font-semibold
+                                @(o.Status == "Hoàn tất" ? "bg-green-100 text-green-700" :
+                                  o.Status == "Đã đặt cọc" ? "bg-blue-100 text-blue-700" :
+                                  o.Status == "Đang lái thử" ? "bg-yellow-100 text-yellow-700" :
+                                  "bg-gray-100 text-gray-600")">
+                                @o.Status
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center border-t pt-3">
+                            <p class="text-xs text-gray-400">@o.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                            <p class="font-black text-navy text-lg">@o.Amount.ToString("N0") ₫</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,96 @@
+@using CarWebsite.Models
+@model List<User>
+@{
+    ViewData["Title"] = "Khách Hàng — Kinh Doanh";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-4 text-sm">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">@TempData["Error"]</div>
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Quản Lý Khách Hàng</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Thông tin khách hàng và lịch sử tư vấn</p>
+    </div>
+    <form method="get" class="flex gap-2">
+        <input type="text" name="q" value="@ViewBag.SearchQ"
+               placeholder="Tìm tên, email..."
+               class="border border-gray-200 rounded-xl px-4 py-2 text-sm w-56 focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        <button class="bg-brand text-white text-sm px-4 py-2 rounded-xl hover:bg-red-700 transition-colors">Tìm</button>
+    </form>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng khách hàng</p>
+        <p class="text-3xl font-black text-navy">@Model.Count</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Đã có đơn hàng</p>
+        <p class="text-3xl font-black text-blue-600">@(((Dictionary<Guid,int>)(ViewBag.OrderCounts ?? new Dictionary<Guid,int>())).Count)</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng doanh thu (triệu ₫)</p>
+        @{
+            var totals = (ViewBag.OrderTotals as Dictionary<Guid, long>) ?? new Dictionary<Guid, long>();
+            var tongDt = totals.Values.Sum() / 1_000_000;
+        }
+        <p class="text-3xl font-black text-green-600">@tongDt.ToString("N0")</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Email</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Số đơn</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Tổng chi tiêu</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày đăng ký</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @{
+                    var counts = (ViewBag.OrderCounts as Dictionary<Guid, int>)    ?? new Dictionary<Guid, int>();
+                    var spend  = (ViewBag.OrderTotals as Dictionary<Guid, long>)   ?? new Dictionary<Guid, long>();
+                }
+                @foreach (var u in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-brand flex items-center justify-center text-white font-bold text-sm">@u.Name[0]</div>
+                                <div>
+                                    <p class="font-semibold text-navy">@u.Name</p>
+                                    <p class="text-xs text-gray-400">@u.Branch</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-gray-600">@u.Email</td>
+                        <td class="px-5 py-4">
+                            <span class="font-semibold text-navy">@(counts.GetValueOrDefault(u.Id, 0))</span>
+                            <span class="text-gray-400 text-xs ml-1">đơn</span>
+                        </td>
+                        <td class="px-5 py-4 font-semibold text-green-700">
+                            @((spend.GetValueOrDefault(u.Id, 0) / 1_000_000).ToString("N0")) tr.₫
+                        </td>
+                        <td class="px-5 py-4 text-gray-400 text-xs">@u.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="5" class="px-5 py-10 text-center text-gray-400">Không tìm thấy khách hàng.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

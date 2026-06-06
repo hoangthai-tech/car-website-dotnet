@@ -1,0 +1,90 @@
+@using CarWebsite.Models
+@model VehicleUnit
+@{
+    ViewData["Title"] = "PDI — Kiểm Định Xe";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-2xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-black text-navy">PDI — Kiểm Định Xe Trước Giao</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Pre-Delivery Inspection cho VIN: <span class="font-mono font-bold text-navy">@Model.Vin</span></p>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-5 text-sm">
+        <div class="grid grid-cols-3 gap-4 text-blue-700">
+            <div><span class="text-xs text-blue-400 block">Mẫu xe</span><strong>@(Model.Car?.Name ?? "—")</strong></div>
+            <div><span class="text-xs text-blue-400 block">Màu ngoại thất</span><strong>@Model.ExteriorColor</strong></div>
+            <div><span class="text-xs text-blue-400 block">Màu nội thất</span><strong>@Model.InteriorColor</strong></div>
+        </div>
+    </div>
+
+    <form asp-action="PdiSave" asp-controller="Dashboard" method="post" enctype="multipart/form-data" class="space-y-5">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="vehicleUnitId" value="@Model.Id" />
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 class="font-bold text-navy mb-4">Các hạng mục kiểm tra</h2>
+            <div class="space-y-3">
+                @foreach (var item in new[] {
+                    ("exteriorPassed", "ngoai", "Ngoại thất (sơn, kính, đèn, gương)"),
+                    ("interiorPassed", "noi", "Nội thất (ghế, táp-lô, điều hòa, cửa)"),
+                    ("electricalPassed", "dien", "Hệ thống điện (camera, màn hình, âm thanh)"),
+                    ("enginePassed", "may", "Động cơ & hộp số (dầu, nước, tiếng nổ)"),
+                    ("tirePassed", "lop", "Lốp & phanh (áp suất, mòn, hoạt động phanh)")
+                })
+                {
+                    <div class="flex items-center justify-between p-3.5 rounded-xl border border-gray-100 hover:bg-gray-50">
+                        <label for="@item.Item1" class="text-sm font-semibold text-gray-700 cursor-pointer">@item.Item3</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="@item.Item1" value="true" class="accent-green-600" onchange="updateDefect('@item.Item2', true)" checked />
+                                <span class="text-sm text-green-700 font-semibold">Đạt</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
+                                <input type="radio" name="@item.Item1" value="false" class="accent-red-600" onchange="updateDefect('@item.Item2', false)" />
+                                <span class="text-sm text-red-600 font-semibold">Không đạt</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="defect-@item.Item2" class="hidden ml-4 p-3.5 bg-red-50 border border-red-100 rounded-xl">
+                        <p class="text-xs font-bold text-red-700 mb-2">Mô tả lỗi — @item.Item3</p>
+                        <div class="space-y-2">
+                            <input type="hidden" name="defectCategories" value="@item.Item3" />
+                            <input type="text" name="defectReasons" placeholder="Mô tả chi tiết lỗi..." required class="w-full border border-red-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-red-300" />
+                            <div>
+                                <label class="text-xs text-red-600 font-semibold mb-1 block">Ảnh lỗi (tùy chọn)</label>
+                                <input type="file" name="defectPhotos" accept=".jpg,.jpeg,.png,.webp" class="text-xs text-gray-600 file:mr-2 file:px-3 file:py-1 file:rounded-lg file:border-0 file:bg-red-100 file:text-red-700 file:font-semibold" />
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ghi chú tổng quan</label>
+            <textarea name="notes" rows="3" placeholder="Ghi chú thêm về tình trạng xe..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"></textarea>
+        </div>
+
+        <div class="flex gap-3">
+            <a asp-action="KhoXeUnit" asp-controller="Dashboard" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-3 rounded-xl text-sm text-center">Hủy</a>
+            <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm">Lưu Kết Quả PDI</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+function updateDefect(key, passed) {
+    const el = document.getElementById('defect-' + key);
+    if (passed) {
+        el.classList.add('hidden');
+        el.querySelectorAll('input[name="defectReasons"]').forEach(i => i.removeAttribute('required'));
+    } else {
+        el.classList.remove('hidden');
+        el.querySelectorAll('input[name="defectReasons"]').forEach(i => i.setAttribute('required', ''));
+    }
+}
+</script>
+}

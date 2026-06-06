@@ -1,0 +1,116 @@
+@using CarWebsite.Models
+@model List<TodoItem>
+@{
+    ViewData["Title"] = "Nhắc Việc";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var pending    = Model.Where(t => t.Status == "pending").ToList();
+    var inprogress = Model.Where(t => t.Status == "inprogress").ToList();
+    var done       = Model.Where(t => t.Status == "done").ToList();
+}
+
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Nhắc Việc Hôm Nay</h1>
+        <p class="text-sm text-gray-400 mt-0.5">@Model.Count(t => t.Status != "done") việc cần xử lý</p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+            class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Thêm việc
+    </button>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    @foreach (var col in new[] {
+        ("pending",    "Chưa làm",     "bg-gray-100", "text-gray-600",  pending),
+        ("inprogress", "Đang làm",     "bg-blue-100", "text-blue-700",  inprogress),
+        ("done",       "Đã hoàn thành","bg-green-100","text-green-700", done)
+    })
+    {
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+            <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+                <span class="text-sm font-bold text-navy">@col.Item2</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-semibold @col.Item3 @col.Item4">@col.Item5.Count</span>
+            </div>
+            <div class="p-3 space-y-2 min-h-[200px]">
+                @foreach (var t in col.Item5)
+                {
+                    <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-navy @(t.Status == "done" ? "line-through text-gray-400" : "")">@t.Title</p>
+                                @if (!string.IsNullOrEmpty(t.Description))
+                                {
+                                    <p class="text-xs text-gray-500 mt-0.5">@t.Description</p>
+                                }
+                                @if (t.DueDate.HasValue)
+                                {
+                                    var overdue = t.DueDate.Value < DateTime.UtcNow && t.Status != "done";
+                                    <p class="text-xs mt-1 @(overdue ? "text-red-500 font-semibold" : "text-gray-400")">
+                                        📅 @t.DueDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                        @if (overdue) { <span>— Quá hạn!</span> }
+                                    </p>
+                                }
+                            </div>
+                            <form asp-action="TodoDelete" asp-controller="Dashboard" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@t.Id" />
+                                <button type="submit" class="text-gray-300 hover:text-red-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </form>
+                        </div>
+                        <div class="flex gap-1.5 mt-2.5">
+                            @foreach (var s in new[] { ("pending","Chưa làm","bg-gray-200 text-gray-600"), ("inprogress","Đang làm","bg-blue-100 text-blue-700"), ("done","Hoàn thành","bg-green-100 text-green-700") })
+                            {
+                                if (s.Item1 != t.Status)
+                                {
+                                    <form asp-action="TodoUpdateStatus" asp-controller="Dashboard" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <input type="hidden" name="status" value="@s.Item1" />
+                                        <button type="submit" class="text-xs px-2 py-1 rounded-lg font-semibold @s.Item3 transition-colors hover:opacity-80">@s.Item2</button>
+                                    </form>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                @if (!col.Item5.Any())
+                {
+                    <p class="text-xs text-gray-300 text-center py-6">Không có việc nào</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-navy">Thêm Việc Mới</h2>
+            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="TodoAdd" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tiêu đề <span class="text-red-500">*</span></label>
+                <input type="text" name="title" required placeholder="Gọi điện cho khách hàng A..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ghi chú</label>
+                <textarea name="description" rows="2" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Hạn chót</label>
+                <input type="datetime-local" name="dueDate" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm">Thêm</button>
+            </div>
+        </form>
+    </div>
+</div>

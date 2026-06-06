@@ -1,0 +1,172 @@
+@using CarWebsite.Models
+@model List<SparePart>
+@{
+    ViewData["Title"] = "Kho Phụ Tùng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var lowStock = Model.Count(p => p.IsLowStock);
+}
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+@if (TempData["Error"] != null)   { <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">@TempData["Error"]</div> }
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Kho Phụ Tùng</h1>
+        <p class="text-sm text-gray-400 mt-0.5">
+            @Model.Count phụ tùng
+            @if (lowStock > 0) { <span class="text-red-600 font-semibold">— @lowStock mặt hàng sắp hết</span> }
+        </p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Nhập phụ tùng
+    </button>
+</div>
+
+@if (lowStock > 0)
+{
+    <div class="bg-red-50 border border-red-200 rounded-2xl p-4 mb-5 text-sm text-red-700">
+        <strong>Cảnh báo tồn kho thấp:</strong>
+        @foreach (var p in Model.Where(p => p.IsLowStock))
+        { <span class="ml-2 bg-red-100 px-2 py-0.5 rounded-md font-semibold">@p.Name (@p.Stock @p.Unit)</span> }
+    </div>
+}
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Mã / Tên</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Tồn kho</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Tối thiểu</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Đơn giá</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Tình trạng</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var p in Model)
+                {
+                    <tr class="hover:bg-gray-50 @(p.IsLowStock ? "bg-red-50/30" : "")">
+                        <td class="px-4 py-3.5">
+                            <div class="font-mono text-xs font-bold text-navy">@p.PartCode</div>
+                            <div class="text-sm font-semibold text-gray-700">@p.Name</div>
+                        </td>
+                        <td class="px-4 py-3.5 text-center font-bold @(p.IsLowStock ? "text-red-600" : "text-navy")">@p.Stock <span class="text-xs font-normal text-gray-400">@p.Unit</span></td>
+                        <td class="px-4 py-3.5 text-center text-xs text-gray-500">@p.MinStock @p.Unit</td>
+                        <td class="px-4 py-3.5 text-right text-xs font-semibold text-gray-700">@((p.UnitPrice / 1_000).ToString("N0"))K ₫</td>
+                        <td class="px-4 py-3.5 text-center">
+                            @if (p.IsLowStock)
+                            { <span class="text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-semibold">Sắp hết</span> }
+                            else
+                            { <span class="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-semibold">Đủ hàng</span> }
+                        </td>
+                        <td class="px-4 py-3.5 text-right">
+                            <button onclick="openEditPart('@p.Id','@p.Name',@p.Stock,@p.MinStock,@p.UnitPrice,'@p.Unit')" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg font-semibold">Sửa</button>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any()) { <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">Kho phụ tùng trống.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Add Modal *@
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-navy">Nhập Phụ Tùng Mới</h2>
+            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="DichVuPhuTungAdd" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mã phụ tùng <span class="text-red-500">*</span></label>
+                    <input type="text" name="partCode" required placeholder="VD: LO-001" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Đơn vị <span class="text-red-500">*</span></label>
+                    <input type="text" name="unit" required placeholder="cái, bộ, lít..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tên phụ tùng <span class="text-red-500">*</span></label>
+                <input type="text" name="name" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tồn kho</label>
+                    <input type="number" name="stock" required min="0" value="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tối thiểu</label>
+                    <input type="number" name="minStock" required min="0" value="5" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Đơn giá (₫)</label>
+                    <input type="number" name="unitPrice" required min="0" step="1000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm">Nhập kho</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Edit Modal *@
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-navy">Cập Nhật Phụ Tùng</h2>
+            <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="DichVuPhuTungEdit" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="ePartId" />
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tên phụ tùng</label>
+                <input type="text" name="name" id="ePartName" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tồn kho</label>
+                    <input type="number" name="stock" id="ePartStock" required min="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tối thiểu</label>
+                    <input type="number" name="minStock" id="ePartMin" required min="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Đơn giá (₫)</label>
+                    <input type="number" name="unitPrice" id="ePartPrice" required min="0" step="1000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Đơn vị</label>
+                <input type="text" name="unit" id="ePartUnit" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm">Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openEditPart(id, name, stock, minStock, unitPrice, unit) {
+    document.getElementById('ePartId').value    = id;
+    document.getElementById('ePartName').value  = name;
+    document.getElementById('ePartStock').value = stock;
+    document.getElementById('ePartMin').value   = minStock;
+    document.getElementById('ePartPrice').value = unitPrice;
+    document.getElementById('ePartUnit').value  = unit;
+    document.getElementById('editModal').classList.remove('hidden');
+}
+</script>
+}

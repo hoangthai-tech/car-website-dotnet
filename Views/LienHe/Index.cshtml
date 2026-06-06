@@ -1,0 +1,66 @@
+@{ ViewData["Title"] = "Liên Hệ"; }
+
+<div class="pt-24 pb-16 min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-10">
+            <div class="section-line mb-3"></div>
+            <h1 class="text-3xl sm:text-4xl font-black text-navy">Liên Hệ Với Chúng Tôi</h1>
+            <p class="text-gray-500 mt-2">Đội ngũ tư vấn sẵn sàng hỗ trợ bạn 24/7.</p>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-6">
+                @TempData["Success"]
+            </div>
+        }
+
+        <div class="grid lg:grid-cols-2 gap-10">
+            <div class="bg-white rounded-2xl p-8 shadow-sm">
+                <h2 class="text-xl font-bold text-navy mb-6">Gửi Yêu Cầu</h2>
+                <form asp-controller="LienHe" asp-action="Send" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Họ và tên *</label>
+                            <input type="text" name="name" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" placeholder="Nguyễn Văn A" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Số điện thoại *</label>
+                            <input type="tel" name="phone" required class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" placeholder="0901 234 567" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                            <input type="email" name="email" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" placeholder="email@example.com" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nội dung</label>
+                            <textarea name="message" rows="4" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none" placeholder="Tôi muốn tư vấn về..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-brand hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-colors">
+                            Gửi yêu cầu
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="space-y-6">
+                @foreach (var info in new[] {
+                    ("📍","Showroom","123 Đường Lê Lợi, Quận 1, TP. Hồ Chí Minh"),
+                    ("📞","Hotline","0937 907 149"),
+                    ("✉️","Email","autoelite123leloi@gmail.com"),
+                    ("🕐","Giờ làm việc","Thứ 2 – Chủ nhật: 8:00 – 20:00")
+                })
+                {
+                    <div class="bg-white rounded-2xl p-6 shadow-sm flex items-start gap-4">
+                        <div class="text-3xl">@info.Item1</div>
+                        <div>
+                            <h3 class="font-bold text-navy mb-1">@info.Item2</h3>
+                            <p class="text-gray-500 text-sm">@info.Item3</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

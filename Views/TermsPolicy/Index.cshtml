@@ -1,0 +1,248 @@
+@model List<CarWebsite.Models.TermsOfService>
+@{ ViewData["Title"] = "Cấu hình Chính sách & Điều khoản"; Layout = "~/Views/Shared/_DashboardLayout.cshtml"; }
+
+@{
+    var active = Model.FirstOrDefault(t => t.IsActive);
+    // Nội dung điều khoản mẫu AutoHT ID v1.0
+    var defaultContent = @"<h2>ĐIỀU KHOẢN SỬ DỤNG TÀI KHOẢN AutoHT ID</h2>
+<p><strong>Ban hành bởi:</strong> Công ty Cổ phần Công nghệ và Thương mại Ô tô AutoHT<br>
+<strong>Địa chỉ:</strong> Tòa nhà AutoHT, Số 1 Đại lộ Thăng Long, Quận Nam Từ Liêm, Hà Nội, Việt Nam<br>
+<strong>Hotline:</strong> 1800 1234 | <strong>Email:</strong> legal@autoht.vn</p>
+<hr>
+
+<h3>Điều 1. Dịch vụ AutoHT ID</h3>
+<p>AutoHT ID là hệ thống tài khoản định danh trung tâm do Công ty Cổ phần Công nghệ và Thương mại Ô tô AutoHT cung cấp, cho phép người dùng:</p>
+<ul>
+<li>Đăng nhập thống nhất vào hệ thống mua bán xe, đặt lịch lái thử, theo dõi tiến độ cọc xe và lịch sử bảo dưỡng xưởng dịch vụ AutoHT.</li>
+<li>Quản lý hồ sơ mua xe, hợp đồng, chứng từ thanh toán và lịch sử giao dịch trực tuyến.</li>
+<li>Nhận thông báo về chính sách bảo hành, chương trình khuyến mãi và cập nhật dịch vụ từ AutoHT.</li>
+</ul>
+<p><strong>Đối với người chưa đủ 18 tuổi:</strong> Việc đăng ký và sử dụng tài khoản AutoHT ID phải có sự đồng ý bằng văn bản của cha, mẹ hoặc người giám hộ hợp pháp. AutoHT có quyền yêu cầu cung cấp bằng chứng giám hộ bất kỳ lúc nào.</p>
+
+<h3>Điều 2. Thay đổi Điều khoản Sử dụng</h3>
+<p>2.1. AutoHT có quyền cập nhật, sửa đổi Điều khoản Sử dụng AutoHT ID bất kỳ lúc nào nhằm phù hợp với quy định pháp luật mới hoặc cải tiến chất lượng dịch vụ.</p>
+<p>2.2. Mọi thay đổi sẽ được thông báo trước tối thiểu <strong>30 ngày</strong> qua địa chỉ Email đã đăng ký và/hoặc thông báo trong Ứng dụng AutoHT trước ngày có hiệu lực.</p>
+<p>2.3. Nếu người dùng không đồng ý với điều khoản mới, người dùng có quyền từ chối bằng cách yêu cầu xóa tài khoản AutoHT ID trước ngày điều khoản mới có hiệu lực, thông qua mục ""Tài khoản của tôi"" hoặc liên hệ trực tiếp với bộ phận Chăm sóc Khách hàng AutoHT.</p>
+<p>2.4. Việc tiếp tục sử dụng dịch vụ sau khi điều khoản mới có hiệu lực đồng nghĩa với việc người dùng chấp nhận toàn bộ nội dung thay đổi.</p>
+
+<h3>Điều 3. Tài khoản và Bảo mật</h3>
+<p>3.1. <strong>Thông tin đăng nhập:</strong> Tên đăng nhập là địa chỉ Email hoặc Số điện thoại đã đăng ký. Mỗi cá nhân chỉ được tạo một (01) tài khoản AutoHT ID.</p>
+<p>3.2. <strong>Bảo mật mật khẩu:</strong> Người dùng tự chịu trách nhiệm bảo mật thông tin đăng nhập (tên đăng nhập, mật khẩu, mã OTP). AutoHT khuyến nghị sử dụng mật khẩu mạnh (tối thiểu 8 ký tự, kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt) và thay đổi định kỳ 90 ngày.</p>
+<p>3.3. <strong>Nghiêm cấm:</strong></p>
+<ul>
+<li>Chuyển nhượng, cho mượn, bán hoặc chia sẻ tài khoản AutoHT ID cho bất kỳ bên thứ ba nào.</li>
+<li>Sử dụng tài khoản người khác hoặc cố tình đăng nhập trái phép vào hệ thống.</li>
+<li>Tạo tài khoản bằng thông tin giả mạo, thông tin của người khác khi chưa được ủy quyền hợp pháp.</li>
+</ul>
+<p>3.4. Nếu phát hiện tài khoản bị xâm phạm, người dùng phải thông báo ngay cho AutoHT qua Hotline <strong>1800 1234</strong> để được hỗ trợ khóa và khôi phục tài khoản.</p>
+
+<h3>Điều 4. Xử lý Dữ liệu Cá nhân (Quyền riêng tư)</h3>
+<p>4.1. AutoHT cam kết thu thập và xử lý dữ liệu cá nhân theo đúng quy định của <strong>Luật An ninh mạng 2018</strong>, <strong>Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân</strong> và <strong>Luật Bảo vệ quyền lợi người tiêu dùng 2023</strong>.</p>
+<p>4.2. <strong>Dữ liệu bắt buộc thu thập</strong> bao gồm: Họ và tên, Số điện thoại, Địa chỉ Email, Căn cước công dân/CCCD (khi làm thủ tục mua xe hoặc ký hợp đồng tín dụng). Các dữ liệu này được sử dụng để: thực hiện giao dịch mua bán xe, cấp giấy tờ bảo hành, tra cứu lịch sử dịch vụ và thực hiện nghĩa vụ pháp lý theo yêu cầu của cơ quan Nhà nước.</p>
+<p>4.3. AutoHT cam kết <strong>không bán, không chia sẻ</strong> dữ liệu cá nhân của người dùng cho bên thứ ba vì mục đích thương mại khi chưa có sự đồng ý bằng văn bản, ngoại trừ trường hợp pháp luật yêu cầu hoặc phục vụ việc thực thi hợp đồng (ví dụ: ngân hàng đối tác trong gói vay mua xe).</p>
+<p>4.4. Người dùng có quyền yêu cầu xem, chỉnh sửa, xóa hoặc hạn chế xử lý dữ liệu cá nhân bằng cách liên hệ qua Email <strong>privacy@autoht.vn</strong>. AutoHT cam kết phản hồi trong vòng <strong>72 giờ</strong> làm việc.</p>
+
+<h3>Điều 5. Giới hạn Trách nhiệm Pháp lý</h3>
+<p>5.1. AutoHT không chịu trách nhiệm về thiệt hại gián tiếp hoặc thiệt hại do mất dữ liệu trong các trường hợp <strong>bất khả kháng</strong> bao gồm: thiên tai, sự cố cơ sở hạ tầng mạng viễn thông, tấn công mạng từ bên ngoài nằm ngoài tầm kiểm soát của AutoHT, hoặc quyết định của cơ quan Nhà nước có thẩm quyền.</p>
+<p>5.2. AutoHT có quyền tạm ngưng dịch vụ để thực hiện <strong>bảo trì định kỳ</strong> có thông báo trước tối thiểu 24 giờ qua Email/Ứng dụng. Trong trường hợp sự cố khẩn cấp, AutoHT sẽ khắc phục trong thời gian sớm nhất và thông báo đến người dùng ngay sau khi hệ thống hoạt động trở lại.</p>
+<p>5.3. AutoHT là nền tảng kết nối trung gian. Các giao dịch mua bán xe giữa Khách hàng và AutoHT được điều chỉnh bởi Hợp đồng Mua bán riêng biệt theo quy định của <strong>Bộ luật Dân sự 2015</strong> và <strong>Luật Thương mại 2005</strong>.</p>
+
+<h3>Điều 6. Biện pháp Xử lý Vi phạm</h3>
+<p>Khi phát hiện người dùng vi phạm Điều khoản Sử dụng, AutoHT áp dụng các biện pháp xử lý theo mức độ vi phạm:</p>
+<ul>
+<li><strong>Mức 1 — Nhắc nhở:</strong> Gửi thông báo qua Email/SMS cảnh báo hành vi vi phạm và yêu cầu khắc phục.</li>
+<li><strong>Mức 2 — Khóa tài khoản tạm thời:</strong> Áp dụng từ 7 đến 30 ngày tùy mức độ vi phạm (ví dụ: cung cấp thông tin không chính xác, sử dụng tài khoản không đúng mục đích đăng ký).</li>
+<li><strong>Mức 3 — Khóa tài khoản vĩnh viễn (Blacklist):</strong> Áp dụng trong các trường hợp: gian lận tiền cọc xe, phá hoại hoặc làm sai lệch dữ liệu hệ thống, cung cấp thông tin giả mạo nhằm thực hiện hành vi lừa đảo, vi phạm pháp luật hình sự. Tài khoản bị đưa vào Danh sách đen sẽ không thể khôi phục và AutoHT có quyền chuyển thông tin đến cơ quan pháp luật có thẩm quyền.</li>
+</ul>
+
+<h3>Điều 7. Luật Áp dụng và Giải quyết Tranh chấp</h3>
+<p>7.1. Các Điều khoản Sử dụng này được điều chỉnh và giải thích theo <strong>pháp luật nước Cộng hòa Xã hội Chủ nghĩa Việt Nam</strong>.</p>
+<p>7.2. Mọi tranh chấp phát sinh liên quan đến việc thực hiện Điều khoản Sử dụng này được ưu tiên giải quyết bằng thương lượng, hòa giải giữa các bên trong thời hạn 30 ngày kể từ ngày phát sinh tranh chấp.</p>
+<p>7.3. Trong trường hợp thương lượng không thành, tranh chấp sẽ được đưa ra giải quyết tại <strong>Tòa án nhân dân có thẩm quyền tại thành phố Hà Nội</strong>, phán quyết của Tòa án là quyết định cuối cùng và có hiệu lực bắt buộc đối với các bên.</p>
+
+<h3>Điều 8. Điều khoản Chung</h3>
+<p>8.1. Nếu bất kỳ điều khoản nào trong văn bản này bị coi là vô hiệu hoặc không thể thực thi bởi Tòa án có thẩm quyền, các điều khoản còn lại vẫn có hiệu lực đầy đủ.</p>
+<p>8.2. Việc AutoHT không thực thi bất kỳ quyền nào theo Điều khoản này tại một thời điểm cụ thể không đồng nghĩa với việc từ bỏ quyền đó trong tương lai.</p>
+<p>8.3. Để được hỗ trợ, vui lòng liên hệ: <strong>Bộ phận Chăm sóc Khách hàng AutoHT</strong> — Hotline: 1800 1234 (miễn phí, 8:00–18:00, Thứ 2 – Thứ 7) | Email: support@autoht.vn.</p>";
+}
+
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-black text-navy">Cấu hình Chính sách & Điều khoản</h1>
+            <p class="text-gray-500 text-sm mt-1">Quản lý phiên bản Điều khoản Sử dụng AutoHT ID</p>
+        </div>
+        @if (active != null)
+        {
+            <span class="px-3 py-1.5 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
+                Đang áp dụng: @active.Version
+            </span>
+        }
+        else
+        {
+            <span class="px-3 py-1.5 bg-amber-100 text-amber-700 text-sm font-semibold rounded-full">
+                Chưa có phiên bản nào được kích hoạt
+            </span>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 text-sm">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">@TempData["Error"]</div>
+    }
+
+    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+
+        <!-- Form soạn thảo phiên bản mới -->
+        <div class="xl:col-span-3 bg-white rounded-2xl shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+                <div class="w-8 h-8 bg-brand/10 rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-brand" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </div>
+                <h2 class="font-bold text-navy">Soạn thảo & Xuất bản phiên bản mới</h2>
+            </div>
+            <form asp-controller="TermsPolicy" asp-action="Publish" method="post" class="p-6 space-y-4">
+                @Html.AntiForgeryToken()
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Số phiên bản <span class="text-brand">*</span></label>
+                        <input type="text" name="version" required placeholder="Ví dụ: v1.0, v2.0"
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ngày hiệu lực <span class="text-brand">*</span></label>
+                        <input type="date" name="effectiveDate" required
+                               value="@DateTime.Now.AddDays(30).ToString("yyyy-MM-dd")"
+                               class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Nội dung Điều khoản (HTML) <span class="text-brand">*</span>
+                    </label>
+                    <div class="flex gap-2 mb-2">
+                        <button type="button" onclick="loadDefaultContent()"
+                                class="text-xs px-3 py-1.5 bg-navy/5 hover:bg-navy/10 text-navy rounded-lg font-semibold transition-colors">
+                            Tải mẫu AutoHT ID v1.0
+                        </button>
+                        <button type="button" onclick="togglePreview()"
+                                class="text-xs px-3 py-1.5 bg-brand/10 hover:bg-brand/20 text-brand rounded-lg font-semibold transition-colors">
+                            Xem trước
+                        </button>
+                    </div>
+                    <textarea name="content" id="contentEditor" rows="20" required
+                              class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"
+                              placeholder="Nhập nội dung HTML hoặc nhấn 'Tải mẫu AutoHT ID v1.0'..."></textarea>
+                    <!-- Preview panel -->
+                    <div id="previewPanel" class="hidden border border-gray-200 rounded-xl p-5 mt-2 prose max-w-none bg-gray-50 max-h-96 overflow-y-auto text-sm"></div>
+                </div>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+                    <strong>Lưu ý:</strong> Khi xuất bản phiên bản mới, tất cả người dùng sẽ bị yêu cầu đồng ý lại ở lần đăng nhập tiếp theo.
+                    Phiên bản cũ sẽ tự động bị vô hiệu hóa.
+                </div>
+                <button type="submit"
+                        class="w-full bg-brand hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Xuất bản phiên bản mới
+                </button>
+            </form>
+        </div>
+
+        <!-- Danh sách phiên bản -->
+        <div class="xl:col-span-2 bg-white rounded-2xl shadow-sm">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="font-bold text-navy">Lịch sử phiên bản</h2>
+                <p class="text-xs text-gray-400 mt-0.5">@Model.Count phiên bản</p>
+            </div>
+            <div class="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+                @if (!Model.Any())
+                {
+                    <div class="text-center py-10 text-gray-400 text-sm">
+                        Chưa có phiên bản nào được xuất bản.
+                    </div>
+                }
+                @foreach (var t in Model)
+                {
+                    <div class="border @(t.IsActive ? "border-green-300 bg-green-50" : "border-gray-200") rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-black text-navy">@t.Version</span>
+                                @if (t.IsActive)
+                                {
+                                    <span class="px-2 py-0.5 bg-green-600 text-white text-[10px] font-bold rounded-full">ĐANG ÁP DỤNG</span>
+                                }
+                            </div>
+                            <div class="flex gap-1">
+                                <a asp-controller="TermsPolicy" asp-action="Preview" asp-route-id="@t.Id"
+                                   target="_blank"
+                                   class="px-2 py-1 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                                    Xem
+                                </a>
+                                <a asp-controller="TermsPolicy" asp-action="AgreementStats" asp-route-id="@t.Id"
+                                   class="px-2 py-1 text-xs text-navy border border-navy/20 rounded-lg hover:bg-navy/5 transition-colors">
+                                    Thống kê
+                                </a>
+                                @if (!t.IsActive)
+                                {
+                                    <form asp-controller="TermsPolicy" asp-action="Activate" asp-route-id="@t.Id" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="px-2 py-1 text-xs text-green-700 border border-green-300 rounded-lg hover:bg-green-50 transition-colors">
+                                            Kích hoạt
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 space-y-0.5">
+                            <p>Hiệu lực: <strong>@t.EffectiveDate.ToString("dd/MM/yyyy")</strong></p>
+                            <p>Xuất bản: @t.PublishedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                            @if (t.PublishedBy != null)
+                            {
+                                <p>Bởi: @t.PublishedBy.Name</p>
+                            }
+                            <p>Đã đồng ý: <strong>@t.Agreements.Count người dùng</strong></p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const defaultContent = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(defaultContent));
+
+    function loadDefaultContent() {
+        document.getElementById('contentEditor').value = defaultContent;
+    }
+
+    function togglePreview() {
+        const panel = document.getElementById('previewPanel');
+        const editor = document.getElementById('contentEditor');
+        if (panel.classList.contains('hidden')) {
+            panel.innerHTML = editor.value;
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    }
+</script>
+
+<style>
+    .prose h2 { font-size: 1.2rem; font-weight: 800; color: #001C3D; margin: 1rem 0 0.5rem; }
+    .prose h3 { font-size: 1rem; font-weight: 700; color: #001C3D; margin: 1rem 0 0.4rem; }
+    .prose p  { margin: 0.4rem 0; color: #374151; }
+    .prose ul { margin: 0.4rem 0 0.4rem 1.5rem; list-style: disc; color: #374151; }
+    .prose li { margin: 0.2rem 0; }
+    .prose hr { border-color: #e5e7eb; margin: 1rem 0; }
+    .prose strong { color: #001C3D; }
+</style>

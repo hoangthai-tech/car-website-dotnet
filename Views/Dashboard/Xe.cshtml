@@ -1,0 +1,572 @@
+@using CarWebsite.Models
+@model List<Car>
+@{
+    ViewData["Title"] = "Quản lý kho xe";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var role = Context.Session.GetString("UserRole");
+    var soldCount    = ViewBag.SoldCount    as Dictionary<Guid, int> ?? new();
+    var depositCount = ViewBag.DepositCount as Dictionary<Guid, int> ?? new();
+    var testCount    = ViewBag.TestCount    as Dictionary<Guid, int> ?? new();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-4 text-sm">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">@TempData["Error"]</div>
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Kho Xe</h1>
+        <p class="text-gray-500 text-sm mt-1">@Model.Count xe • @Model.Count(c => c.Status == "approved") đã duyệt • @Model.Count(c => c.Status == "pending") chờ duyệt</p>
+    </div>
+    @if (role == "admin" || role == "manager")
+    {
+        <button onclick="document.getElementById('addCarModal').classList.remove('hidden')"
+                class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Thêm xe
+        </button>
+    }
+</div>
+
+@* Tổng kho summary *@
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Tổng tồn kho</p>
+        <p class="text-2xl font-black text-navy">@Model.Where(c => c.Status == "approved").Sum(c => c.Stock)</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Đã bán</p>
+        <p class="text-2xl font-black text-green-600">@soldCount.Values.Sum()</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Đã đặt cọc</p>
+        <p class="text-2xl font-black text-blue-600">@depositCount.Values.Sum()</p>
+    </div>
+    <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 uppercase tracking-wider mb-1">Đang lái thử</p>
+        <p class="text-2xl font-black text-yellow-600">@testCount.Values.Sum()</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase hidden md:table-cell">Loại</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase hidden md:table-cell">Giá bán</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Tồn kho</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase hidden lg:table-cell">Đã bán</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase hidden lg:table-cell">Đặt cọc</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase hidden lg:table-cell">Lái thử</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase hidden md:table-cell">Trạng thái</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var car in Model)
+                {
+                    var sold    = soldCount.GetValueOrDefault(car.Id, 0);
+                    var deposit = depositCount.GetValueOrDefault(car.Id, 0);
+                    var test    = testCount.GetValueOrDefault(car.Id, 0);
+                    var remaining = car.Stock - sold;
+                    if (remaining < 0) remaining = 0;
+
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-3">
+                                <img src="@car.Image" alt="" class="w-14 h-10 rounded-lg object-cover flex-shrink-0"
+                                     onerror="this.src='https://placehold.co/56x40/001C3D/fff?text=?'" />
+                                <div>
+                                    <p class="font-semibold text-navy leading-tight">@car.Name</p>
+                                    <p class="text-xs text-gray-400">@car.Brand • @car.Year</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 hidden md:table-cell">
+                            <span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">@car.Type</span>
+                        </td>
+                        <td class="px-5 py-4 font-semibold text-navy hidden md:table-cell">@car.PriceDisplay</td>
+
+                        @* Tồn kho mini bar *@
+                        <td class="px-5 py-4 text-center">
+                            <div class="flex flex-col items-center gap-1">
+                                @{
+                                    var pct = car.Stock > 0 ? (double)remaining / car.Stock * 100 : 0;
+                                    var barColor = pct > 50 ? "bg-green-400" : pct > 20 ? "bg-yellow-400" : "bg-red-400";
+                                }
+                                <span class="font-black text-navy text-base leading-none">@remaining<span class="text-xs font-normal text-gray-400">/@car.Stock</span></span>
+                                <div class="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full rounded-full @barColor transition-all" style="width:@((int)pct)%"></div>
+                                </div>
+                                <span class="text-xs text-gray-400">còn lại</span>
+                            </div>
+                        </td>
+
+                        <td class="px-5 py-4 text-center hidden lg:table-cell">
+                            @if (sold > 0)
+                            {
+                                <span class="inline-block bg-green-100 text-green-700 font-bold px-2.5 py-1 rounded-full text-xs">@sold xe</span>
+                            }
+                            else
+                            {
+                                <span class="text-gray-300 text-xs">—</span>
+                            }
+                        </td>
+
+                        <td class="px-5 py-4 text-center hidden lg:table-cell">
+                            @if (deposit > 0)
+                            {
+                                <span class="inline-block bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-full text-xs">@deposit xe</span>
+                            }
+                            else
+                            {
+                                <span class="text-gray-300 text-xs">—</span>
+                            }
+                        </td>
+
+                        <td class="px-5 py-4 text-center hidden lg:table-cell">
+                            @if (test > 0)
+                            {
+                                <span class="inline-block bg-yellow-100 text-yellow-700 font-bold px-2.5 py-1 rounded-full text-xs">@test xe</span>
+                            }
+                            else
+                            {
+                                <span class="text-gray-300 text-xs">—</span>
+                            }
+                        </td>
+
+                        <td class="px-5 py-4 text-center hidden md:table-cell">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                @(car.Status == "approved" ? "bg-green-100 text-green-700" :
+                                  car.Status == "pending"  ? "bg-yellow-100 text-yellow-700" :
+                                  "bg-gray-100 text-gray-600")">
+                                @(car.Status == "approved" ? "Đã duyệt" : car.Status == "pending" ? "Chờ duyệt" : "Nháp")
+                            </span>
+                        </td>
+
+                        <td class="px-5 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                @if (car.Status == "pending" && (role == "admin" || role == "manager"))
+                                {
+                                    <form asp-action="XeApprove" asp-controller="Dashboard" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@car.Id" />
+                                        <button type="submit" class="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                            Duyệt
+                                        </button>
+                                    </form>
+                                }
+                                @if (role == "admin" || role == "manager")
+                                {
+                                    <button type="button"
+                                            onclick="openEdit('@car.Id','@car.Name.Replace("'","\\'")', '@car.Brand','@car.Type','@car.Fuel',@car.Year,@car.Price,@car.RentalPricePerDay,'@car.Image','@(car.Badge ?? "")',@car.Stock)"
+                                            class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                        Sửa
+                                    </button>
+                                }
+                                @if (role == "admin" || role == "manager")
+                                {
+                                    <button type="button"
+                                            onclick="openImagesModal('@car.Id','@car.Name.Replace("'","\\'")', @Html.Raw(System.Text.Json.JsonSerializer.Serialize(car.Images)))"
+                                            class="text-xs @(car.Images.Count > 0 ? "bg-blue-100 hover:bg-blue-200 text-blue-700" : "bg-gray-100 hover:bg-gray-200 text-gray-600") px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                        Ảnh (@car.Images.Count)
+                                    </button>
+                                }
+                                @if (role == "admin" || role == "manager")
+                                {
+                                    <button type="button"
+                                            onclick="open3DModal('@car.Id','@car.Name.Replace("'","\\'")', '@(car.Model3DUrl ?? "")')"
+                                            class="text-xs @(string.IsNullOrEmpty(car.Model3DUrl) ? "bg-purple-100 hover:bg-purple-200 text-purple-700" : "bg-green-100 hover:bg-green-200 text-green-700") px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                        3D
+                                    </button>
+                                }
+                                @if (role == "admin")
+                                {
+                                    <form asp-action="XeDelete" asp-controller="Dashboard" method="post" class="inline" id="delete-form-@car.Id">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@car.Id" />
+                                        <button type="button" onclick="showConfirmModal('Xóa xe @Html.Raw(car.Name.Replace("'","\\'")), function(){ document.getElementById(\'delete-form-@car.Id\').submit(); }, \'🗑️\', \'Xóa xe\')"
+                                                class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="px-5 py-8 text-center text-gray-400">Chưa có xe nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Edit Car Modal *@
+<div id="editCarModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-black text-navy">Sửa Xe</h2>
+            <button type="button" onclick="document.getElementById('editCarModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form asp-action="XeEdit" asp-controller="Dashboard" method="post" enctype="multipart/form-data" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="edit-id" />
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tên xe <span class="text-red-500">*</span></label>
+                <input type="text" name="name" id="edit-name" required
+                       class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Thương hiệu <span class="text-red-500">*</span></label>
+                    <select name="brand" id="edit-brand" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option>Mercedes-Benz</option><option>BMW</option><option>Audi</option>
+                        <option>Toyota</option><option>Honda</option><option>VinFast</option>
+                        <option>Lamborghini</option><option>Ferrari</option><option>McLaren</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Loại xe <span class="text-red-500">*</span></label>
+                    <select name="type" id="edit-type" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option>Sedan</option><option>SUV</option><option>Coupe</option>
+                        <option>Pickup</option><option>Hatchback</option><option>Van</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nhiên liệu <span class="text-red-500">*</span></label>
+                    <select name="fuel" id="edit-fuel" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option>Xăng</option><option>Điện</option><option>Hybrid</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Năm sản xuất <span class="text-red-500">*</span></label>
+                    <input type="number" name="year" id="edit-year" min="2000" max="2030" required
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giá bán (₫) <span class="text-red-500">*</span></label>
+                    <input type="number" name="price" id="edit-price" min="0" required
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giá thuê/ngày (₫) <span class="text-red-500">*</span></label>
+                    <input type="number" name="rentalPricePerDay" id="edit-rental" min="0" required
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Số lượng kho (chiếc) <span class="text-red-500">*</span></label>
+                    <input type="number" name="stock" id="edit-stock" min="1" required
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ảnh đại diện</label>
+                <div class="space-y-2">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Tải ảnh từ máy tính <span class="text-blue-600 font-semibold">(khuyến nghị)</span></label>
+                        <input type="file" name="imageFile" accept=".jpg,.jpeg,.png,.webp"
+                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                               onchange="if(this.files[0]){var r=new FileReader();r.onload=function(e){showPreview(e.target.result);};r.readAsDataURL(this.files[0]);}" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Hoặc nhập URL ảnh</label>
+                        <input type="url" name="image" id="edit-image"
+                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="https://..." />
+                    </div>
+                    <img id="edit-preview" src="" alt="preview" class="h-24 w-full object-cover rounded-lg hidden" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Badge <span class="text-gray-400 font-normal">(không bắt buộc)</span></label>
+                <input type="text" name="badge" id="edit-badge"
+                       class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                       placeholder="Bán Chạy, AMG..." />
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('editCarModal').classList.add('hidden')"
+                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm transition-colors">Hủy</button>
+                <button type="submit"
+                        class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Lưu thay đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openImagesModal(id, name, images) {
+    document.getElementById('upload-image-car-id').value = id;
+    document.getElementById('modal-images-carname').textContent = name;
+
+    const list = document.getElementById('modal-images-list');
+    list.innerHTML = '';
+
+    if (!images || images.length === 0) {
+        list.innerHTML = '<p class="col-span-2 text-sm text-gray-400 text-center py-4">Chưa có ảnh phụ nào.</p>';
+    } else {
+        const token = document.querySelector('input[name=__RequestVerificationToken]').value;
+        images.forEach(url => {
+            list.innerHTML += `
+                <div class="relative rounded-xl overflow-hidden aspect-video bg-gray-100">
+                    <img src="${url}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/200x120/e5e7eb/9ca3af?text=Lỗi'" />
+                    <form action="/Dashboard/XeDeleteImage" method="post" class="absolute top-1.5 right-1.5">
+                        <input type="hidden" name="__RequestVerificationToken" value="${token}" />
+                        <input type="hidden" name="id" value="${id}" />
+                        <input type="hidden" name="imageUrl" value="${url}" />
+                        <button type="submit" onclick="return confirm('Xóa ảnh này?')"
+                                title="Xóa ảnh"
+                                class="flex items-center justify-center w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-md transition-colors">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </form>
+                </div>`;
+        });
+    }
+
+    document.getElementById('modalImages').classList.remove('hidden');
+}
+
+function open3DModal(id, name, current3DUrl) {
+    document.getElementById('upload3d-id').value = id;
+    document.getElementById('delete3d-id').value = id;
+    document.getElementById('modal3d-carname').textContent = name;
+    const currentDiv = document.getElementById('modal3d-current');
+    if (current3DUrl) currentDiv.classList.remove('hidden');
+    else currentDiv.classList.add('hidden');
+    document.getElementById('modal3D').classList.remove('hidden');
+}
+
+function openEdit(id, name, brand, type, fuel, year, price, rental, image, badge, stock) {
+    document.getElementById('edit-id').value     = id;
+    document.getElementById('edit-name').value   = name;
+    document.getElementById('edit-year').value   = year;
+    document.getElementById('edit-price').value  = price;
+    document.getElementById('edit-rental').value = rental;
+    document.getElementById('edit-image').value  = image;
+    document.getElementById('edit-badge').value  = badge;
+    document.getElementById('edit-stock').value  = stock;
+    setSelect('edit-brand', brand);
+    setSelect('edit-type',  type);
+    setSelect('edit-fuel',  fuel);
+    showPreview(image);
+    document.getElementById('editCarModal').classList.remove('hidden');
+}
+function setSelect(id, val) {
+    const sel = document.getElementById(id);
+    for (let i = 0; i < sel.options.length; i++)
+        if (sel.options[i].value === val) { sel.selectedIndex = i; break; }
+}
+function showPreview(url) {
+    const img = document.getElementById('edit-preview');
+    if (url) { img.src = url; img.classList.remove('hidden'); }
+    else      { img.classList.add('hidden'); }
+}
+document.getElementById('edit-image').addEventListener('input', function() { showPreview(this.value); });
+</script>
+}
+
+<div id="addCarModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-5">
+            <h2 class="text-lg font-black text-navy">Thêm Xe Mới</h2>
+            <button type="button" onclick="document.getElementById('addCarModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form asp-action="XeAdd" asp-controller="Dashboard" method="post" enctype="multipart/form-data" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tên xe</label>
+                <input type="text" name="name" required
+                       class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                       placeholder="Mercedes C200 AMG" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Thương hiệu</label>
+                    <select name="brand" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option>Mercedes-Benz</option>
+                        <option>BMW</option>
+                        <option>Audi</option>
+                        <option>Toyota</option>
+                        <option>Honda</option>
+                        <option>VinFast</option>
+                        <option>Lamborghini</option>
+                        <option>Ferrari</option>
+                        <option>McLaren</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Loại xe</label>
+                    <select name="type" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option>Sedan</option>
+                        <option>SUV</option>
+                        <option>Coupe</option>
+                        <option>Pickup</option>
+                        <option>Hatchback</option>
+                        <option>Van</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nhiên liệu</label>
+                    <select name="fuel" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option>Xăng</option>
+                        <option>Điện</option>
+                        <option>Hybrid</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Năm sản xuất</label>
+                    <input type="number" name="year" value="2025" min="2000" max="2030" required
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giá bán (₫)</label>
+                    <input type="number" name="price" required min="0"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                           placeholder="1500000000" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giá thuê/ngày (₫)</label>
+                    <input type="number" name="rentalPricePerDay" required min="0"
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                           placeholder="2000000" />
+                </div>
+                <div class="col-span-2">
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Số lượng kho (chiếc)</label>
+                    <input type="number" name="stock" value="1" min="1" required
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ảnh đại diện</label>
+                <div class="space-y-2">
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Tải ảnh từ máy tính <span class="text-blue-600 font-semibold">(khuyến nghị)</span></label>
+                        <input type="file" name="imageFile" accept=".jpg,.jpeg,.png,.webp"
+                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-500 mb-1 block">Hoặc nhập URL ảnh</label>
+                        <input type="url" name="image"
+                               class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="https://..." />
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Badge <span class="text-gray-400 font-normal">(không bắt buộc)</span></label>
+                <input type="text" name="badge"
+                       class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                       placeholder="Bán Chạy, Mới Nhất, AMG..." />
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addCarModal').classList.add('hidden')"
+                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm transition-colors">
+                    Hủy
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">
+                    Thêm xe
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* Secondary Images Modal *@
+<div id="modalImages" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-black text-navy">Ảnh phụ</h2>
+                <p class="text-sm text-gray-500 mt-0.5" id="modal-images-carname"></p>
+            </div>
+            <button type="button" onclick="document.getElementById('modalImages').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div id="modal-images-list" class="grid grid-cols-2 gap-3 mb-5"></div>
+
+        <form asp-action="XeUploadImage" asp-controller="Dashboard" method="post" enctype="multipart/form-data" class="space-y-3 border-t border-gray-100 pt-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="upload-image-car-id" />
+            <label class="block text-sm font-semibold text-gray-700">Thêm ảnh phụ mới</label>
+            <input type="file" name="image" accept=".jpg,.jpeg,.png,.webp" required
+                   class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            <p class="text-xs text-gray-400">Hỗ trợ JPG, PNG, WebP. Tối đa 30MB.</p>
+            <div class="flex gap-3">
+                <button type="button" onclick="document.getElementById('modalImages').classList.add('hidden')"
+                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm transition-colors">Đóng</button>
+                <button type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Upload ảnh</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@* 3D Model Upload Modal *@
+<div id="modal3D" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-lg font-black text-navy">Mô hình 3D</h2>
+                <p class="text-sm text-gray-500 mt-0.5" id="modal3d-carname"></p>
+            </div>
+            <button type="button" onclick="document.getElementById('modal3D').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div id="modal3d-current" class="hidden mb-4 flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <span class="text-sm text-green-700 font-semibold">✓ Đã có mô hình 3D</span>
+            <form asp-action="XeDelete3D" asp-controller="Dashboard" method="post" class="inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="delete3d-id" />
+                <button type="submit" onclick="return confirm('Xóa mô hình 3D của xe này?')"
+                        class="text-xs text-red-600 hover:text-red-800 font-semibold">Xóa 3D</button>
+            </form>
+        </div>
+
+        <form asp-action="XeUpload3D" asp-controller="Dashboard" method="post" enctype="multipart/form-data" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="upload3d-id" />
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Chọn file 3D</label>
+                <input type="file" name="model3d" accept=".glb,.gltf" required
+                       class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100" />
+                <p class="text-xs text-gray-400 mt-1.5">Hỗ trợ định dạng <strong>.glb</strong> và .gltf. Khuyến nghị dùng .glb (nhỏ hơn, tải nhanh hơn).</p>
+            </div>
+            <div class="flex gap-3 pt-1">
+                <button type="button" onclick="document.getElementById('modal3D').classList.add('hidden')"
+                        class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm transition-colors">Hủy</button>
+                <button type="submit"
+                        class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2.5 rounded-xl transition-colors text-sm">Upload 3D</button>
+            </div>
+        </form>
+    </div>
+</div>

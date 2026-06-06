@@ -1,0 +1,108 @@
+@using CarWebsite.Models
+@model User
+@{ ViewData["Title"] = "Hồ Sơ Của Tôi"; }
+
+<div class="pt-24 pb-16 min-h-screen bg-gray-50">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-4 text-sm">@TempData["Success"]</div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">@TempData["Error"]</div>
+        }
+
+        <div class="bg-white rounded-2xl shadow-sm p-8 mb-6">
+            <div class="flex items-center gap-6 mb-6">
+                <div class="w-20 h-20 rounded-full bg-brand flex items-center justify-center text-white font-black text-3xl flex-shrink-0">
+                    @Model.Name[0]
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-navy">@Model.Name</h1>
+                    <p class="text-gray-500">@Model.Email</p>
+                    <span class="inline-block mt-1 text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+                        @(Model.Role == "customer" ? "Khách hàng" : Model.Role)
+                    </span>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-6 mb-6">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Email</p>
+                    <p class="font-semibold text-navy text-sm">@Model.Email</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Chi nhánh</p>
+                    <p class="font-semibold text-navy text-sm">@(string.IsNullOrEmpty(Model.Branch) ? "—" : Model.Branch)</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Ngày tham gia</p>
+                    <p class="font-semibold text-navy text-sm">@Model.CreatedAt.ToString("dd/MM/yyyy")</p>
+                </div>
+            </div>
+            <div class="flex gap-3 flex-wrap">
+                <a asp-controller="Profile" asp-action="Orders"
+                   class="bg-brand hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+                    Đơn hàng của tôi
+                </a>
+                <a asp-controller="Home" asp-action="Index"
+                   class="border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold px-6 py-3 rounded-xl transition-colors text-sm">
+                    Về trang chủ
+                </a>
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm p-6">
+                <h2 class="text-lg font-bold text-navy mb-4">Cập nhật thông tin</h2>
+                <form asp-controller="Profile" asp-action="Update" method="post" class="space-y-4">
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Họ và tên</label>
+                        <input type="text" name="name" value="@Model.Name" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                        <input type="email" value="@Model.Email" disabled
+                               class="w-full border border-gray-100 rounded-xl px-4 py-3 text-sm bg-gray-50 text-gray-400 cursor-not-allowed" />
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-navy hover:bg-navy/90 text-white font-bold py-3 rounded-xl transition-colors text-sm">
+                        Lưu thay đổi
+                    </button>
+                </form>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm p-6">
+                <h2 class="text-lg font-bold text-navy mb-4">Đổi mật khẩu</h2>
+                <form asp-controller="Profile" asp-action="ChangePassword" method="post" class="space-y-4">
+                    @Html.AntiForgeryToken()
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mật khẩu hiện tại</label>
+                        <input type="password" name="currentPassword" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="••••••••" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mật khẩu mới</label>
+                        <input type="password" name="newPassword" required minlength="8"
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="Tối thiểu 8 ký tự" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Xác nhận mật khẩu mới</label>
+                        <input type="password" name="confirmPassword" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="Nhập lại mật khẩu mới" />
+                    </div>
+                    <button type="submit"
+                            class="w-full bg-brand hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors text-sm">
+                        Đổi mật khẩu
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

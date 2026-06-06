@@ -1,0 +1,87 @@
+@using CarWebsite.Models
+@model List<Car>
+@{
+    ViewData["Title"] = "Nhập / Xuất Kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var xuatKho = (ViewBag.XuatKho as List<Order>) ?? new List<Order>();
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Quản Lý Nhập / Xuất Kho</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Phiếu nhập từ nhà máy, phiếu xuất khi giao xe</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng tồn kho</p>
+        <p class="text-3xl font-black text-navy">@(ViewBag.TongTon ?? 0)</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Xe đã duyệt</p>
+        <p class="text-3xl font-black text-green-600">@(ViewBag.TongApproved ?? 0)</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Xe chờ duyệt</p>
+        <p class="text-3xl font-black text-yellow-600">@(ViewBag.TongPending ?? 0)</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    @* Phiếu xuất kho *@
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-5 border-b border-gray-100 flex items-center gap-2">
+            <span class="text-lg">📤</span>
+            <h2 class="font-bold text-navy">Phiếu Xuất Kho — Xe đã giao</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Mã đơn</th>
+                        <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                        <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                        <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày giao</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach (var o in xuatKho.Take(20))
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-mono text-xs text-navy font-semibold">@o.OrderCode</td>
+                            <td class="px-4 py-3 text-gray-700">@o.CarName</td>
+                            <td class="px-4 py-3 text-gray-600">@o.CustomerName</td>
+                            <td class="px-4 py-3 text-right text-gray-400 text-xs">@o.UpdatedAt.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                    @if (!xuatKho.Any())
+                    {
+                        <tr><td colspan="4" class="px-4 py-6 text-center text-gray-400 text-xs">Chưa có phiếu xuất kho.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @* Hướng dẫn nhập kho mới *@
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="text-lg">📥</span>
+            <h2 class="font-bold text-navy">Phiếu Nhập Kho</h2>
+        </div>
+        <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-4">
+            <p class="text-sm text-blue-700 font-semibold mb-1">Quy trình nhập kho từ nhà máy:</p>
+            <ol class="text-sm text-blue-600 space-y-1 list-decimal list-inside">
+                <li>Admin thêm xe mới vào hệ thống (trạng thái: Chờ duyệt)</li>
+                <li>Kiểm tra thực tế số khung, số máy, màu sắc</li>
+                <li>Admin duyệt → xe vào kho chính thức</li>
+                <li>Cập nhật số lượng tồn kho</li>
+            </ol>
+        </div>
+        <a asp-controller="Dashboard" asp-action="Xe"
+           class="block text-center bg-brand text-white font-semibold py-2.5 rounded-xl hover:bg-red-700 transition-colors text-sm">
+            Đến trang Quản lý Kho xe (Admin)
+        </a>
+    </div>
+</div>

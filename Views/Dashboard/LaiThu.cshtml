@@ -1,0 +1,128 @@
+@using CarWebsite.Models
+@model List<TestDrive>
+@{
+    ViewData["Title"] = "Lịch Lái Thử";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var customers = (ViewBag.Customers as List<User>) ?? [];
+    var cars = (ViewBag.Cars as List<Car>) ?? [];
+}
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+@if (TempData["Error"] != null) { <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">@TempData["Error"]</div> }
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Lịch Lái Thử</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Đặt lịch & kiểm tra trùng giờ tự động</p>
+    </div>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Đặt lịch
+    </button>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe lái thử</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Biển số</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày / Giờ</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var d in Model)
+                {
+                    var badgeCls = d.Status switch { "confirmed" => "bg-blue-100 text-blue-700", "completed" => "bg-green-100 text-green-700", "cancelled" => "bg-red-100 text-red-600", _ => "bg-yellow-100 text-yellow-700" };
+                    var badgeLbl = d.Status switch { "pending" => "Chờ xác nhận", "confirmed" => "Đã xác nhận", "completed" => "Hoàn thành", "cancelled" => "Đã hủy", _ => d.Status };
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3.5 font-semibold text-navy">@(d.Customer?.Name ?? "—")</td>
+                        <td class="px-5 py-3.5 text-gray-700">@(d.Car?.Name ?? "—")</td>
+                        <td class="px-5 py-3.5 font-mono text-xs font-bold text-navy">@d.LicensePlate</td>
+                        <td class="px-5 py-3.5 text-gray-600 text-xs">
+                            <div>@d.ScheduledDate.ToString("dd/MM/yyyy")</div>
+                            <div class="text-gray-400">@d.StartTime.ToString(@"hh\:mm") – @d.EndTime.ToString(@"hh\:mm")</div>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold @badgeCls">@badgeLbl</span>
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <div class="flex gap-1.5 justify-end">
+                                @foreach (var s in new[] { ("confirmed","Xác nhận","bg-blue-100 text-blue-700"), ("completed","Hoàn thành","bg-green-100 text-green-700"), ("cancelled","Hủy","bg-red-100 text-red-600") })
+                                {
+                                    if (d.Status != s.Item1 && d.Status != "completed" && d.Status != "cancelled")
+                                    {
+                                        <form asp-action="LaiThuUpdateStatus" asp-controller="Dashboard" method="post" class="inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@d.Id" />
+                                            <input type="hidden" name="status" value="@s.Item1" />
+                                            <button type="submit" class="text-xs px-2.5 py-1 rounded-lg font-semibold @s.Item3">@s.Item2</button>
+                                        </form>
+                                    }
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any()) { <tr><td colspan="6" class="px-5 py-10 text-center text-gray-400">Chưa có lịch lái thử nào.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-navy">Đặt Lịch Lái Thử</h2>
+            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="LaiThuAdd" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Khách hàng</label>
+                    <select name="customerId" required class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option value="">-- Chọn --</option>
+                        @foreach (var c in customers) { <option value="@c.Id">@c.Name</option> }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Xe lái thử</label>
+                    <select name="carId" required class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        <option value="">-- Chọn --</option>
+                        @foreach (var c in cars) { <option value="@c.Id">@c.Name</option> }
+                    </select>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Biển số xe lái thử</label>
+                <input type="text" name="licensePlate" required placeholder="51G-12345" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ngày</label>
+                <input type="date" name="scheduledDate" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giờ bắt đầu</label>
+                    <input type="time" name="startTime" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giờ kết thúc</label>
+                    <input type="time" name="endTime" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Ghi chú</label>
+                <input type="text" name="notes" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm">Đặt lịch</button>
+            </div>
+        </form>
+    </div>
+</div>

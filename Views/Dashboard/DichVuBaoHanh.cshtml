@@ -1,0 +1,101 @@
+@using CarWebsite.Models
+@model List<Order>
+@{
+    ViewData["Title"] = "Lịch Sử Bảo Hành — Dịch Vụ";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Lịch Sử Bảo Hành</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Theo dõi bảo hành cho từng xe đã bán</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">🛡️</div>
+        <p class="text-xs text-gray-400 mb-1">Xe đang trong bảo hành</p>
+        <p class="text-2xl font-black text-navy">@Model.Count(o => o.UpdatedAt >= DateTime.UtcNow.AddYears(-3))</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">⚠️</div>
+        <p class="text-xs text-gray-400 mb-1">Sắp hết bảo hành (< 3 tháng)</p>
+        @{
+            var soonExpire = Model.Count(o =>
+                o.UpdatedAt >= DateTime.UtcNow.AddYears(-3) &&
+                o.UpdatedAt < DateTime.UtcNow.AddYears(-3).AddMonths(3));
+        }
+        <p class="text-2xl font-black text-yellow-600">@soonExpire</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">📋</div>
+        <p class="text-xs text-gray-400 mb-1">Tổng xe đã bán</p>
+        <p class="text-2xl font-black text-green-600">@Model.Count</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-5 border-b border-gray-100">
+        <h2 class="font-bold text-navy">Danh sách xe trong chương trình bảo hành</h2>
+        <p class="text-xs text-gray-400 mt-0.5">Bảo hành 3 năm / 100.000 km kể từ ngày bàn giao</p>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Mã đơn</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Chủ xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày bàn giao</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hết bảo hành</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Tình trạng</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var o in Model)
+                {
+                    var batDau    = o.UpdatedAt;
+                    var hetBaoHanh= batDau.AddYears(3);
+                    var conLai    = (hetBaoHanh - DateTime.UtcNow).Days;
+                    string tinhTrang;
+                    string badgeClass;
+
+                    if (conLai <= 0)
+                    {
+                        tinhTrang  = "Hết bảo hành";
+                        badgeClass = "bg-gray-100 text-gray-500";
+                    }
+                    else if (conLai <= 90)
+                    {
+                        tinhTrang  = $"Còn {conLai} ngày";
+                        badgeClass = "bg-yellow-100 text-yellow-700";
+                    }
+                    else
+                    {
+                        tinhTrang  = $"Còn {conLai} ngày";
+                        badgeClass = "bg-green-100 text-green-700";
+                    }
+
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3.5 font-mono text-xs text-navy font-semibold">@o.OrderCode</td>
+                        <td class="px-5 py-3.5 font-semibold text-gray-800">@o.CarName</td>
+                        <td class="px-5 py-3.5 text-gray-600">
+                            @o.CustomerName
+                            <p class="text-xs text-gray-400">@o.Customer?.Email</p>
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-500 text-xs">@batDau.ToString("dd/MM/yyyy")</td>
+                        <td class="px-5 py-3.5 text-gray-500 text-xs">@hetBaoHanh.ToString("dd/MM/yyyy")</td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold @badgeClass">@tinhTrang</span>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="6" class="px-5 py-10 text-center text-gray-400">Chưa có xe nào trong danh sách bảo hành.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

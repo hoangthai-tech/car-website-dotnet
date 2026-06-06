@@ -1,0 +1,217 @@
+@using CarWebsite.Models
+@{
+    ViewData["Title"] = "Đăng Ký";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var activeTerms = ViewBag.ActiveTerms as TermsOfService;
+}
+
+<div class="min-h-screen bg-gray-50 flex items-center justify-center pt-20 pb-12 px-4">
+    <div class="w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 bg-brand rounded-xl flex items-center justify-center mx-auto mb-4">
+                <span class="text-white font-black text-xl">A</span>
+            </div>
+            <h1 class="text-2xl font-black text-navy">Tạo tài khoản AutoHT</h1>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">
+                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <p>@err.ErrorMessage</p>
+                }
+            </div>
+        }
+
+        <div class="bg-white rounded-2xl shadow-sm p-8">
+            <form asp-controller="Account" asp-action="Register" method="post">
+                @Html.AntiForgeryToken()
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Họ và tên</label>
+                        <input type="text" name="name" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="Nguyễn Văn A" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+                        <input type="email" name="email" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="email@example.com" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Mật khẩu</label>
+                        <input type="password" name="password" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="Tối thiểu 6 ký tự" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">Xác nhận mật khẩu</label>
+                        <input type="password" name="confirmPassword" required
+                               class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                               placeholder="Nhập lại mật khẩu" />
+                    </div>
+
+                    <!-- Ô tích chấp nhận điều khoản -->
+                    <div class="border-2 border-gray-200 rounded-xl p-4 bg-gray-50 hover:border-brand/40 transition-colors">
+                        <label for="agreeTerms" class="flex items-start gap-3 cursor-pointer select-none">
+                            <div class="flex-shrink-0 mt-0.5">
+                                <input type="checkbox" id="agreeTerms" name="agreeTerms" value="true"
+                                       class="sr-only" required
+                                       onchange="onTermsCheckChange(this)" />
+                                <div id="termCheckBox"
+                                     class="w-6 h-6 border-2 border-gray-300 rounded-md flex items-center justify-center transition-all duration-150 shadow-sm">
+                                    <svg id="termCheckMark" class="w-3.5 h-3.5 text-white hidden"
+                                         fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="text-sm text-gray-600 leading-relaxed">
+                                Tôi đã đọc và đồng ý với
+                                <button type="button"
+                                        onclick="event.preventDefault(); event.stopPropagation(); openTermsModal()"
+                                        class="text-brand font-semibold hover:underline">Điều khoản sử dụng AutoHT ID</button>
+                                @if (activeTerms != null)
+                                {
+                                    <span class="text-gray-400 text-xs ml-1">(@activeTerms.Version)</span>
+                                }
+                            </span>
+                        </label>
+                    </div>
+
+                    <button type="submit"
+                            class="w-full bg-brand hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-colors">
+                        Tạo tài khoản
+                    </button>
+                </div>
+            </form>
+            <p class="text-center text-sm text-gray-500 mt-6">
+                Đã có tài khoản?
+                <a asp-controller="Account" asp-action="Login" class="text-brand font-semibold hover:underline">Đăng nhập</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal điều khoản -->
+<div id="termsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div class="absolute inset-0 bg-black/60" onclick="closeTermsModal()"></div>
+    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col">
+
+        <!-- Header modal -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-navy rounded-t-2xl">
+            <div>
+                <h3 class="text-white font-bold">Điều Khoản Sử Dụng AutoHT ID</h3>
+                @if (activeTerms != null)
+                {
+                    <p class="text-white/50 text-xs mt-0.5">
+                        Phiên bản @activeTerms.Version — Hiệu lực từ @activeTerms.EffectiveDate.ToString("dd/MM/yyyy")
+                    </p>
+                }
+            </div>
+            <button onclick="closeTermsModal()" class="text-white/60 hover:text-white transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Nội dung cuộn -->
+        <div class="overflow-y-auto px-6 py-5 flex-1 prose max-w-none text-sm" id="modalScrollBox"
+             onscroll="checkModalScroll(this)">
+            @if (activeTerms != null)
+            {
+                @Html.Raw(activeTerms.Content)
+            }
+            else
+            {
+                <div class="py-8 text-center text-gray-400">
+                    <p>Nội dung điều khoản chưa được xuất bản. Vui lòng liên hệ quản trị viên.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Scroll hint -->
+        <div id="modalScrollHint" class="px-6 py-2 bg-amber-50 border-t border-amber-100 text-xs text-amber-700 flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 flex-shrink-0 animate-bounce" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+            Cuộn xuống để đọc toàn bộ nội dung điều khoản
+        </div>
+
+        <!-- Footer modal -->
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
+            <a asp-controller="Home" asp-action="Terms" target="_blank"
+               class="text-xs text-brand hover:underline flex items-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                Xem trang đầy đủ
+            </a>
+            <div class="flex gap-2">
+                <button onclick="closeTermsModal()"
+                        class="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
+                    Đóng
+                </button>
+                <button onclick="agreeAndClose()"
+                        class="px-5 py-2 text-sm bg-brand text-white font-semibold rounded-xl hover:bg-red-700 transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Tôi đồng ý
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function onTermsCheckChange(cb) {
+        const box  = document.getElementById('termCheckBox');
+        const mark = document.getElementById('termCheckMark');
+        if (cb.checked) {
+            box.classList.add('bg-brand', 'border-brand');
+            box.classList.remove('border-gray-300');
+            mark.classList.remove('hidden');
+        } else {
+            box.classList.remove('bg-brand', 'border-brand');
+            box.classList.add('border-gray-300');
+            mark.classList.add('hidden');
+        }
+    }
+
+    function openTermsModal() {
+        document.getElementById('termsModal').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeTermsModal() {
+        document.getElementById('termsModal').classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    function agreeAndClose() {
+        const cb = document.getElementById('agreeTerms');
+        cb.checked = true;
+        onTermsCheckChange(cb);
+        closeTermsModal();
+    }
+
+    function checkModalScroll(el) {
+        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) {
+            document.getElementById('modalScrollHint').classList.add('hidden');
+        }
+    }
+</script>
+
+<style>
+    .prose h2 { font-size: 1.05rem; font-weight: 800; color: #001C3D; margin: 1.2rem 0 0.4rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.3rem; }
+    .prose h3 { font-size: 0.95rem; font-weight: 700; color: #001C3D; margin: 1rem 0 0.3rem; }
+    .prose p  { margin: 0.4rem 0; color: #4B5563; line-height: 1.7; }
+    .prose ul { margin: 0.4rem 0 0.4rem 1.2rem; list-style: disc; color: #4B5563; }
+    .prose li { margin: 0.2rem 0; line-height: 1.6; }
+    .prose hr { border-color: #e5e7eb; margin: 1rem 0; }
+    .prose strong { color: #001C3D; }
+</style>

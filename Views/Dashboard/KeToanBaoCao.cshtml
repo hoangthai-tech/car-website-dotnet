@@ -1,0 +1,101 @@
+@{
+    ViewData["Title"] = "Báo Cáo Dòng Tiền — Kế Toán";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    long totalRevenue = ViewBag.TotalRevenue ?? 0;
+    int  totalOrders  = ViewBag.TotalOrders  ?? 0;
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Báo Cáo Dòng Tiền &amp; Doanh Thu</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Tổng hợp doanh thu bán hàng và phân tích dòng tiền</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng doanh thu</p>
+        <p class="text-xl font-black text-green-600">@((totalRevenue / 1_000_000).ToString("N0")) <span class="text-sm font-normal">tr.₫</span></p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng đơn hàng</p>
+        <p class="text-xl font-black text-navy">@totalOrders</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Doanh thu TB / đơn</p>
+        @{
+            var avgOrder = totalOrders > 0 ? totalRevenue / totalOrders / 1_000_000 : 0;
+        }
+        <p class="text-xl font-black text-blue-600">@avgOrder.ToString("N0") <span class="text-sm font-normal">tr.₫</span></p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Top xe bán chạy</p>
+        @{
+            var topCars = ViewBag.TopCars as dynamic;
+        }
+        <p class="text-sm font-bold text-navy truncate">@(topCars != null && ((IEnumerable<dynamic>)topCars).Any() ? ((IEnumerable<dynamic>)topCars).First().CarName : "—")</p>
+    </div>
+</div>
+
+@* Theo trạng thái đơn hàng *@
+@{
+    var ordersByStatus = ViewBag.OrdersByStatus as System.Collections.IEnumerable;
+}
+@if (ordersByStatus != null)
+{
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div class="p-5 border-b border-gray-100">
+            <h2 class="font-bold text-navy">Đơn hàng theo trạng thái</h2>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                        <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Số đơn</th>
+                        <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Doanh thu</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @foreach (dynamic row in ordersByStatus)
+                    {
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-5 py-3.5">@row.Status</td>
+                            <td class="px-5 py-3.5 text-center font-semibold">@row.Count</td>
+                            <td class="px-5 py-3.5 text-right font-semibold text-green-700">@(((long)row.Revenue / 1_000_000).ToString("N0")) tr.₫</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@* Top xe bán chạy *@
+@if (topCars != null)
+{
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-5 border-b border-gray-100">
+            <h2 class="font-bold text-navy">Top 5 xe bán chạy nhất</h2>
+        </div>
+        <div class="p-5 space-y-3">
+            @{int rank = 1;}
+            @foreach (dynamic car in (IEnumerable<dynamic>)topCars)
+            {
+                var pct = totalOrders > 0 ? (int)((long)car.Count * 100 / totalOrders) : 0;
+                <div class="flex items-center gap-4">
+                    <span class="w-6 text-center font-black text-gray-300 text-lg">@(rank++)</span>
+                    <div class="flex-1">
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-semibold text-navy">@car.CarName</span>
+                            <span class="text-xs text-gray-400">@car.Count đơn — @((car.Total / 1_000_000).ToString("N0")) tr.₫</span>
+                        </div>
+                        <div class="bg-gray-100 rounded-full h-2">
+                            <div class="bg-brand h-2 rounded-full" style="width: @pct%"></div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

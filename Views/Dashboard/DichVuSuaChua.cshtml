@@ -1,0 +1,377 @@
+@using CarWebsite.Models
+@model List<ServiceTicket>
+@{
+    ViewData["Title"] = "Lệnh Sửa Chữa";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var parts       = (ViewBag.Parts as List<SparePart>) ?? [];
+    string search   = ViewBag.Search ?? "";
+    string sfilt    = ViewBag.StatusFilter ?? "";
+    long doanhThu   = (long)(ViewBag.DoanhThuDichVu ?? 0L);
+
+    string StatusLabel(string s) => s switch {
+        "received"  => "Tiếp nhận",
+        "assigned"  => "Đã phân công",
+        "inprogress"=> "Đang sửa",
+        "completed" => "Hoàn thành",
+        "paid"      => "Đã thanh toán",
+        _ => s
+    };
+    string StatusCls(string s) => s switch {
+        "received"  => "bg-yellow-100 text-yellow-700",
+        "assigned"  => "bg-blue-100 text-blue-700",
+        "inprogress"=> "bg-orange-100 text-orange-700",
+        "completed" => "bg-green-100 text-green-700",
+        "paid"      => "bg-gray-100 text-gray-500",
+        _ => "bg-gray-100 text-gray-600"
+    };
+    string BarCls(string s) => s switch {
+        "received"  => "bg-yellow-400",
+        "assigned"  => "bg-blue-400",
+        "inprogress"=> "bg-orange-400",
+        "completed" => "bg-green-400",
+        "paid"      => "bg-gray-300",
+        _ => "bg-gray-200"
+    };
+}
+
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+@if (TempData["Warning"] != null) { <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3 mb-4 text-sm">@TempData["Warning"]</div> }
+@if (TempData["Error"]   != null) { <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">@TempData["Error"]</div> }
+
+@* \1 *@
+<div class="flex items-start justify-between mb-6 gap-4 flex-wrap">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Lệnh Sửa Chữa</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Quản lý lệnh sửa chữa và thay thế phụ tùng</p>
+    </div>
+    <form method="get" class="flex items-center gap-2 flex-wrap">
+        <input type="text" name="q" value="@search"
+               placeholder="Tìm biển số, mã lệnh, khách hàng..."
+               class="border border-gray-200 rounded-xl px-4 py-2.5 text-sm w-72 focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        @if (!string.IsNullOrEmpty(sfilt)) {
+            <input type="hidden" name="status" value="@sfilt" />
+        }
+        <button type="submit" class="bg-brand text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-red-700 transition-colors">Tìm</button>
+        @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(sfilt)) {
+            <a href="@Url.Action("DichVuSuaChua")" class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2.5 rounded-xl border border-gray-200 hover:bg-gray-50">Xóa lọc</a>
+        }
+    </form>
+</div>
+
+@* \1 *@
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">📋</div>
+        <p class="text-xs text-gray-400 mb-1">Tổng lệnh sửa</p>
+        <p class="text-2xl font-black text-navy">@ViewBag.TongLenh</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">⏳</div>
+        <p class="text-xs text-gray-400 mb-1">Đang xử lý</p>
+        <p class="text-2xl font-black text-orange-500">@ViewBag.DangXuLy</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">✅</div>
+        <p class="text-xs text-gray-400 mb-1">Hoàn tất hôm nay</p>
+        <p class="text-2xl font-black text-green-600">@ViewBag.HoanTatHomNay</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div class="text-2xl mb-2">💰</div>
+        <p class="text-xs text-gray-400 mb-1">Doanh thu dịch vụ</p>
+        <p class="text-2xl font-black text-brand">@((doanhThu / 1_000_000).ToString("N0"))M ₫</p>
+    </div>
+</div>
+
+@* \1 *@
+<div class="flex gap-2 mb-4 flex-wrap">
+    @{
+        var tabs = new[] {
+            ("",           "Tất cả",        (int)(ViewBag.CntAll      ?? 0)),
+            ("received",   "Tiếp nhận",     (int)(ViewBag.CntReceived ?? 0)),
+            ("assigned",   "Đã phân công",  (int)(ViewBag.CntAssigned ?? 0)),
+            ("inprogress", "Đang sửa",      (int)(ViewBag.CntInprog   ?? 0)),
+            ("completed",  "Hoàn thành",    (int)(ViewBag.CntCompleted ?? 0)),
+            ("paid",       "Đã thanh toán", (int)(ViewBag.CntPaid     ?? 0)),
+        };
+    }
+    @foreach (var (val, label, cnt) in tabs) {
+        bool active = sfilt == val;
+        <a href="@Url.Action("DichVuSuaChua", new { q = search, status = val == "" ? null : val })"
+           class="@(active ? "bg-brand text-white" : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200") px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-1.5 transition-colors">
+            @label
+            <span class="@(active ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500") text-xs px-1.5 py-0.5 rounded-md font-bold">@cnt</span>
+        </a>
+    }
+</div>
+
+@* \1 *@
+<div class="space-y-3">
+    @foreach (var t in Model) {
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+            @* \1 *@
+            <div class="p-4 flex items-center gap-3">
+                <div class="w-1 self-stretch rounded-full flex-shrink-0 @BarCls(t.Status)"></div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                        <span class="font-mono text-sm font-black text-navy">@t.TicketCode</span>
+                        <span class="font-mono text-xs bg-navy/10 text-navy px-2 py-0.5 rounded-md font-bold tracking-wider">@t.LicensePlate</span>
+                        <span class="text-xs px-2.5 py-1 rounded-full font-semibold @StatusCls(t.Status)">@StatusLabel(t.Status)</span>
+                    </div>
+                    <div class="flex gap-4 text-xs text-gray-600 flex-wrap">
+                        <span><span class="text-gray-400">KH: </span><strong>@t.CustomerName</strong></span>
+                        <span><span class="text-gray-400">SĐT: </span>@t.CustomerPhone</span>
+                        <span><span class="text-gray-400">ODO: </span>@t.Odometer.ToString("N0") km</span>
+                        <span><span class="text-gray-400">KTV: </span><strong>@(t.AssignedTechnician?.Name ?? "Chưa phân công")</strong></span>
+                        <span><span class="text-gray-400">Ngày: </span>@t.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy")</span>
+                        @if (t.SparePartUsages?.Any() == true) {
+                            <span class="text-orange-600 font-semibold">@t.SparePartUsages.Count phụ tùng</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    @if (t.TotalAmount > 0) {
+                        <div class="text-right hidden sm:block">
+                            <p class="text-base font-black text-brand">@((t.TotalAmount / 1_000_000M).ToString("N1"))M ₫</p>
+                            <p class="text-xs text-gray-400">tổng chi phí</p>
+                        </div>
+                    }
+                    <button onclick="toggleOrder('@t.Id', this)" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-2 rounded-lg font-semibold whitespace-nowrap">Chi tiết ▾</button>
+                    <button onclick="printOrder('@t.Id')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 px-3 py-2 rounded-lg font-semibold whitespace-nowrap">In lệnh</button>
+                </div>
+            </div>
+
+            @* \1 *@
+            <div id="order-@t.Id" class="hidden border-t border-gray-100">
+                <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-gray-100">
+
+                    @* \1 *@
+                    <div class="p-4">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Hạng mục sửa chữa</h3>
+                        <p class="text-sm text-gray-700 mb-4 leading-relaxed">@t.Description</p>
+                        <div class="bg-gray-50 rounded-xl p-3 text-xs space-y-1.5">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Kỹ thuật viên</span>
+                                <strong>@(t.AssignedTechnician?.Name ?? "Chưa phân công")</strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Người tiếp nhận</span>
+                                <strong>@(t.CreatedBy?.Name ?? "—")</strong>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Ngày tiếp nhận</span>
+                                <strong>@t.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong>
+                            </div>
+                            @if (t.CompletedAt.HasValue) {
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Hoàn thành lúc</span>
+                                    <strong>@t.CompletedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</strong>
+                                </div>
+                            }
+                        </div>
+                        @if (t.Status == "received") {
+                            <div class="mt-3 bg-yellow-50 border border-yellow-100 rounded-xl p-3 text-xs text-yellow-700">
+                                Chưa phân công KTV. Vào <a href="@Url.Action("DichVuPhieuDichVu")" class="font-bold underline">Phiếu Dịch Vụ</a> để phân công.
+                            </div>
+                        }
+                    </div>
+
+                    @* \1 *@
+                    <div class="p-4">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Phụ tùng sử dụng</h3>
+                        @if (t.SparePartUsages?.Any() == true) {
+                            <div class="space-y-1.5 mb-3">
+                                @foreach (var u in t.SparePartUsages) {
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-700">@(u.SparePart?.Name ?? "—") <span class="text-gray-400">× @u.Quantity @(u.SparePart?.Unit ?? "")</span></span>
+                                        <span class="font-semibold text-navy">@((u.Quantity * u.UnitPrice / 1_000).ToString("N0"))K ₫</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="border-t border-gray-100 pt-2 flex justify-between text-xs font-bold">
+                                <span class="text-gray-500">Tổng phụ tùng</span>
+                                <span class="text-brand">@((t.TotalPartsCost / 1_000).ToString("N0"))K ₫</span>
+                            </div>
+                        } else {
+                            <p class="text-xs text-gray-400 italic mb-3">Chưa có phụ tùng nào được ghi nhận.</p>
+                        }
+
+                        @if (t.Status is "assigned" or "inprogress") {
+                            <form asp-action="DichVuPhuTungSuDung" asp-controller="Dashboard" method="post" class="mt-3 space-y-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="ticketId" value="@t.Id" />
+                                <input type="hidden" name="returnTo" value="suachua" />
+                                <select name="sparePartId" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none">
+                                    <option value="">-- Thêm phụ tùng --</option>
+                                    @foreach (var p in parts) {
+                                        <option value="@p.Id">@p.Name (@p.Stock @p.Unit — @((p.UnitPrice / 1_000).ToString("N0"))K/đv)</option>
+                                    }
+                                </select>
+                                <div class="flex gap-2">
+                                    <input type="number" name="quantity" required min="1" value="1" class="w-20 border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none" />
+                                    <button type="submit" class="flex-1 bg-orange-100 hover:bg-orange-200 text-orange-700 font-semibold py-2 rounded-lg text-xs">+ Ghi nhận phụ tùng</button>
+                                </div>
+                            </form>
+                        }
+                    </div>
+
+                    @* \1 *@
+                    <div class="p-4">
+                        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Chi phí & Thanh toán</h3>
+                        <div class="space-y-1.5 text-xs mb-4">
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Tiền công</span>
+                                <span class="font-semibold">@((t.LaborCost / 1_000).ToString("N0"))K ₫</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-400">Phụ tùng</span>
+                                <span class="font-semibold">@((t.TotalPartsCost / 1_000).ToString("N0"))K ₫</span>
+                            </div>
+                            <div class="flex justify-between border-t border-gray-100 pt-1.5 font-bold text-sm">
+                                <span>Tổng cộng</span>
+                                <span class="text-brand">@((t.TotalAmount / 1_000_000M).ToString("N2"))M ₫</span>
+                            </div>
+                        </div>
+
+                        @if (t.Status is "assigned" or "inprogress") {
+                            <form asp-action="DichVuHoanThanh" asp-controller="Dashboard" method="post" class="space-y-2">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="ticketId" value="@t.Id" />
+                                <input type="hidden" name="returnTo" value="suachua" />
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Tiền công (₫)</label>
+                                    <input type="number" name="laborCost" required min="0" step="10000" value="@t.LaborCost"
+                                           class="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs focus:outline-none" />
+                                </div>
+                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg text-xs">
+                                    Hoàn thành sửa chữa
+                                </button>
+                            </form>
+                        } else if (t.Status == "completed") {
+                            <form asp-action="DichVuThanhToan" asp-controller="Dashboard" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="ticketId" value="@t.Id" />
+                                <input type="hidden" name="returnTo" value="suachua" />
+                                <button type="submit" class="w-full bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-lg text-xs">
+                                    Xác nhận thanh toán & Xuất xưởng
+                                </button>
+                            </form>
+                        } else if (t.Status == "paid") {
+                            <div class="bg-gray-50 rounded-xl p-4 text-center">
+                                <div class="text-xl mb-1">🚗</div>
+                                <p class="text-xs font-bold text-gray-600">Đã thanh toán</p>
+                                <p class="text-xs text-gray-400 mt-0.5">Xe đã xuất xưởng</p>
+                            </div>
+                        } else if (t.Status == "received") {
+                            <div class="bg-yellow-50 rounded-xl p-4 text-center">
+                                <p class="text-xs text-yellow-700">Chờ phân công KTV trước khi sửa chữa.</p>
+                            </div>
+                        }
+                    </div>
+
+                </div>
+            </div>
+
+            @* \1 *@
+            <div id="print-@t.Id" class="hidden">
+                <div style="font-family:Arial,sans-serif;padding:24px;color:#1e293b;max-width:700px">
+                    <div style="border-bottom:2px solid #1e3a5f;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-start">
+                        <div>
+                            <h2 style="margin:0;font-size:20px;color:#1e3a5f;font-weight:900">LỆNH SỬA CHỮA</h2>
+                            <p style="margin:4px 0 0;font-size:13px;color:#64748b">AutoHT — Trung tâm dịch vụ ô tô</p>
+                        </div>
+                        <div style="text-align:right">
+                            <p style="margin:0;font-family:monospace;font-size:15px;font-weight:bold;color:#dc2626">@t.TicketCode</p>
+                            <p style="margin:2px 0 0;font-size:12px;color:#64748b">@t.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;margin-bottom:16px">
+                        <div><span style="color:#64748b">Biển số xe: </span><strong>@t.LicensePlate</strong></div>
+                        <div><span style="color:#64748b">ODO: </span><strong>@t.Odometer.ToString("N0") km</strong></div>
+                        <div><span style="color:#64748b">Khách hàng: </span><strong>@t.CustomerName</strong></div>
+                        <div><span style="color:#64748b">Điện thoại: </span><strong>@t.CustomerPhone</strong></div>
+                        <div><span style="color:#64748b">KTV phụ trách: </span><strong>@(t.AssignedTechnician?.Name ?? "—")</strong></div>
+                        <div><span style="color:#64748b">Trạng thái: </span><strong>@StatusLabel(t.Status)</strong></div>
+                    </div>
+                    <div style="background:#f8fafc;border-radius:8px;padding:12px;margin-bottom:16px">
+                        <p style="margin:0 0 4px;font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.05em;font-weight:bold">Hạng mục sửa chữa</p>
+                        <p style="margin:0;font-size:13px">@t.Description</p>
+                    </div>
+                    @if (t.SparePartUsages?.Any() == true) {
+                        <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:16px">
+                            <thead>
+                                <tr style="border-bottom:2px solid #e2e8f0">
+                                    <th style="text-align:left;padding:6px 4px;color:#64748b;font-weight:600">Phụ tùng</th>
+                                    <th style="text-align:center;padding:6px 4px;color:#64748b;font-weight:600">ĐVT</th>
+                                    <th style="text-align:center;padding:6px 4px;color:#64748b;font-weight:600">SL</th>
+                                    <th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Đơn giá</th>
+                                    <th style="text-align:right;padding:6px 4px;color:#64748b;font-weight:600">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var u in t.SparePartUsages) {
+                                    <tr style="border-bottom:1px solid #f1f5f9">
+                                        <td style="padding:5px 4px">@(u.SparePart?.Name ?? "—")</td>
+                                        <td style="text-align:center;padding:5px 4px">@(u.SparePart?.Unit ?? "—")</td>
+                                        <td style="text-align:center;padding:5px 4px">@u.Quantity</td>
+                                        <td style="text-align:right;padding:5px 4px">@u.UnitPrice.ToString("N0") ₫</td>
+                                        <td style="text-align:right;padding:5px 4px;font-weight:600">@((u.Quantity * u.UnitPrice).ToString("N0")) ₫</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    <div style="text-align:right;font-size:13px;border-top:1px solid #e2e8f0;padding-top:10px">
+                        <div style="margin-bottom:3px"><span style="color:#64748b">Tiền công: </span><strong>@t.LaborCost.ToString("N0") ₫</strong></div>
+                        <div style="margin-bottom:3px"><span style="color:#64748b">Phụ tùng: </span><strong>@t.TotalPartsCost.ToString("N0") ₫</strong></div>
+                        <div style="font-size:17px;font-weight:900;color:#dc2626;margin-top:6px">TỔNG: @t.TotalAmount.ToString("N0") ₫</div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px;text-align:center;font-size:12px;color:#64748b">
+                        <div><div style="border-top:1px solid #94a3b8;padding-top:6px;margin-top:48px">Kỹ thuật viên<br/><strong style="color:#1e293b">@(t.AssignedTechnician?.Name ?? "")</strong></div></div>
+                        <div><div style="border-top:1px solid #94a3b8;padding-top:6px;margin-top:48px">Khách hàng xác nhận<br/><strong style="color:#1e293b">@t.CustomerName</strong></div></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+
+    @if (!Model.Any()) {
+        <div class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+            <div class="text-5xl mb-4">🔧</div>
+            <p class="text-gray-400 text-sm font-medium">
+                @(string.IsNullOrEmpty(search) && string.IsNullOrEmpty(sfilt)
+                    ? "Chưa có lệnh sửa chữa nào. Tạo phiếu dịch vụ từ mục Phiếu Dịch Vụ."
+                    : "Không tìm thấy lệnh sửa chữa phù hợp với bộ lọc hiện tại.")
+            </p>
+            @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(sfilt)) {
+                <a href="@Url.Action("DichVuSuaChua")" class="inline-block mt-3 text-sm text-brand hover:underline">Xóa bộ lọc</a>
+            }
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+function toggleOrder(id, btn) {
+    var el = document.getElementById('order-' + id);
+    el.classList.toggle('hidden');
+    btn.textContent = el.classList.contains('hidden') ? 'Chi tiết ▾' : 'Ẩn bớt ▴';
+}
+
+function printOrder(id) {
+    var content = document.getElementById('print-' + id).innerHTML;
+    var win = window.open('', '_blank', 'width=800,height=700');
+    win.document.write('<!DOCTYPE html><html><head><title>Lệnh Sửa Chữa</title>');
+    win.document.write('<style>@@media print{body{margin:0}}body{margin:0;padding:0}</style>');
+    win.document.write('</head><body>');
+    win.document.write(content);
+    win.document.write('</body></html>');
+    win.document.close();
+    win.focus();
+    setTimeout(function(){ win.print(); }, 300);
+}
+</script>
+}

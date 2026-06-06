@@ -1,0 +1,302 @@
+@using CarWebsite.Models
+@model List<Order>
+@{ ViewData["Title"] = "Xe Cho Thuê"; Layout = "~/Views/Shared/_DashboardLayout.cshtml"; }
+
+@{
+    int pendingCount   = ViewBag.PendingCount;
+    int confirmedCount = ViewBag.ConfirmedCount;
+    int activeCount    = ViewBag.ActiveCount;
+    int returnedCount  = ViewBag.ReturnedCount;
+    long totalRevenue  = ViewBag.TotalRevenue;
+    string curFilter   = ViewBag.Filter ?? "all";
+
+    var today = DateTime.Now.Date;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div id="toast-ok" class="fixed top-6 right-6 z-50 bg-green-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        @TempData["Success"]
+    </div>
+    <script>setTimeout(() => document.getElementById('toast-ok')?.remove(), 3500)</script>
+}
+@if (TempData["Error"] != null)
+{
+    <div id="toast-err" class="fixed top-6 right-6 z-50 bg-red-600 text-white px-5 py-3 rounded-xl shadow-lg text-sm font-semibold">@TempData["Error"]</div>
+    <script>setTimeout(() => document.getElementById('toast-err')?.remove(), 3500)</script>
+}
+
+<h1 class="text-2xl font-black text-navy mb-6">Xe Cho Thuê</h1>
+
+@* Stats cards *@
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Chờ xác nhận</p>
+        <p class="text-3xl font-black text-yellow-500">@pendingCount</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Đã xác nhận</p>
+        <p class="text-3xl font-black text-blue-600">@confirmedCount</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Đang thuê</p>
+        <p class="text-3xl font-black text-brand">@activeCount</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Đã trả xe</p>
+        <p class="text-3xl font-black text-green-600">@returnedCount</p>
+    </div>
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 lg:col-span-1 col-span-2">
+        <p class="text-xs text-gray-400 font-semibold uppercase mb-1">Doanh thu thuê</p>
+        <p class="text-xl font-black text-navy truncate">@totalRevenue.ToString("N0") ₫</p>
+    </div>
+</div>
+
+@* Filter tabs *@
+<div class="flex gap-2 flex-wrap mb-4">
+    @foreach (var tab in new[] {
+        ("all", "Tất cả"),
+        ("Đang đặt thuê", "Chờ xác nhận"),
+        ("Đã xác nhận", "Đã xác nhận"),
+        ("Đang thuê", "Đang thuê"),
+        ("Đã trả xe", "Đã trả xe"),
+        ("Đã hủy", "Đã hủy")
+    })
+    {
+        bool active = curFilter == tab.Item1;
+        <a href="@Url.Action("XeChoThue","Dashboard",new{filter=tab.Item1})"
+           class="px-4 py-2 rounded-xl text-sm font-semibold transition-colors @(active ? "bg-navy text-white shadow-sm" : "bg-white text-gray-600 border border-gray-200 hover:border-navy hover:text-navy")">
+            @tab.Item2
+        </a>
+    }
+</div>
+
+@* Table *@
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Mã đơn</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Thời gian thuê</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Giá / ngày</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Tổng tiền</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var o in Model)
+                {
+                    int days = (o.RentalStartDate.HasValue && o.RentalEndDate.HasValue)
+                        ? (int)(o.RentalEndDate.Value.Date - o.RentalStartDate.Value.Date).TotalDays
+                        : 0;
+                    bool isPending = o.Status == "Đang đặt thuê";
+                    bool isOverdue = o.Status == "Đang thuê" && o.RentalEndDate.HasValue && o.RentalEndDate.Value.Date < today;
+
+                    <tr class="hover:bg-gray-50 @(isOverdue ? "bg-red-50" : "")">
+                        <td class="px-5 py-3.5 font-mono text-xs font-semibold text-navy">@o.OrderCode</td>
+                        <td class="px-5 py-3.5 font-medium text-gray-900">@o.CustomerName</td>
+                        <td class="px-5 py-3.5 text-gray-600 font-medium">@o.CarName</td>
+                        <td class="px-5 py-3.5">
+                            @if (o.RentalStartDate.HasValue && o.RentalEndDate.HasValue)
+                            {
+                                <p class="text-xs font-medium">@o.RentalStartDate.Value.ToString("dd/MM/yyyy") → @o.RentalEndDate.Value.ToString("dd/MM/yyyy")</p>
+                                <p class="text-xs text-gray-400">@days ngày @(isOverdue ? "— ⚠️ Quá hạn" : "")</p>
+                            }
+                            else
+                            {
+                                <span class="text-gray-400 text-xs">Chưa xác nhận</span>
+                            }
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-600">
+                            @if (o.RentalDailyRate > 0)
+                            {
+                                @o.RentalDailyRate.ToString("N0")<text> ₫</text>
+                            }
+                            else
+                            {
+                                <span class="text-gray-400">—</span>
+                            }
+                        </td>
+                        <td class="px-5 py-3.5 font-semibold text-navy">
+                            @if (o.Amount > 0) { @o.Amount.ToString("N0")<text> ₫</text> } else { <span class="text-gray-400">—</span> }
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                @(o.Status == "Đã trả xe"   ? "bg-green-100 text-green-700" :
+                                  o.Status == "Đang thuê"   ? "bg-brand/10 text-brand" :
+                                  o.Status == "Đã xác nhận" ? "bg-blue-100 text-blue-700" :
+                                  o.Status == "Đang đặt thuê" ? "bg-yellow-100 text-yellow-700" :
+                                  o.Status == "Đã hủy"      ? "bg-red-100 text-red-600" :
+                                  "bg-gray-100 text-gray-600")">
+                                @o.Status
+                            </span>
+                            @if (isOverdue)
+                            {
+                                <span class="ml-1 text-xs text-red-600 font-semibold">Quá hạn!</span>
+                            }
+                        </td>
+                        <td class="px-5 py-3.5 text-right">
+                            <div class="flex gap-2 justify-end items-center flex-wrap">
+                                @if (isPending)
+                                {
+                                    <button onclick="openConfirm('@o.Id','@o.CarName','@o.CustomerName',@o.RentalDailyRate)"
+                                            class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                        Xác nhận
+                                    </button>
+                                }
+                                else
+                                {
+                                    var ctAllowed = o.Status switch {
+                                        "Chờ xác nhận" => new[]{"Đã xác nhận","Đã hủy"},
+                                        "Đã xác nhận"  => new[]{"Đang thuê","Đã hủy"},
+                                        "Đang thuê"    => new[]{"Đã trả xe"},
+                                        _              => Array.Empty<string>()
+                                    };
+                                    if (ctAllowed.Length > 0) {
+                                        <form asp-action="XeChoThueUpdateStatus" asp-controller="Dashboard" method="post" class="flex gap-2 items-center" id="ct-form-@o.Id">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@o.Id" />
+                                            <select name="status" class="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none">
+                                                @foreach (var s in ctAllowed) { <option value="@s">@s</option> }
+                                            </select>
+                                            <button type="button"
+                                                    onclick="var sel=this.previousElementSibling;showConfirmModal('Thay đổi trạng thái đơn thuê @o.OrderCode sang \"'+sel.value+'\"?',function(){document.getElementById('ct-form-@o.Id').submit();},'🔄','Xác nhận thay đổi')"
+                                                    class="text-xs bg-navy hover:bg-navy/90 text-white px-3 py-1.5 rounded-lg font-semibold transition-colors">Lưu</button>
+                                        </form>
+                                    } else {
+                                        <span class="text-xs text-gray-400 italic">Không đổi được</span>
+                                    }
+                                }
+                                <form asp-action="XeChoThueDelete" asp-controller="Dashboard" method="post" id="ct-del-@o.Id">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@o.Id" />
+                                    <button type="button"
+                                            onclick="showConfirmModal('Xóa đơn thuê @o.OrderCode của @Html.Raw(o.CustomerName.Replace("'","\\'")),function(){document.getElementById(\'ct-del-@o.Id\').submit();},'🗑️','Xóa đơn thuê')"
+                                            class="text-xs bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-semibold transition-colors">Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" class="px-5 py-10 text-center text-gray-400">Chưa có đơn thuê xe nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Confirm modal *@
+<div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h2 class="text-lg font-black text-navy mb-1">Xác nhận cho thuê xe</h2>
+        <p id="modal-subtitle" class="text-sm text-gray-500 mb-5"></p>
+
+        <form id="confirm-form" asp-action="XeChoThueConfirm" asp-controller="Dashboard" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" id="modal-order-id" />
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Ngày nhận xe</label>
+                    <input type="date" name="rentalStartDate" id="modal-start"
+                           class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" required />
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Ngày trả xe</label>
+                    <input type="date" name="rentalEndDate" id="modal-end"
+                           class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-navy" required />
+                </div>
+            </div>
+
+            <div id="modal-total-wrap" class="hidden mb-5 p-3 bg-navy/5 rounded-xl">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Số ngày</span>
+                    <span id="modal-days" class="font-semibold text-navy"></span>
+                </div>
+                <div class="flex justify-between text-sm mt-1">
+                    <span class="text-gray-500">Giá / ngày</span>
+                    <span id="modal-rate" class="font-semibold text-navy"></span>
+                </div>
+                <div class="flex justify-between text-base font-black mt-2 pt-2 border-t border-gray-200">
+                    <span class="text-gray-700">Tổng tiền</span>
+                    <span id="modal-total" class="text-brand"></span>
+                </div>
+            </div>
+
+            <div class="flex gap-3">
+                <button type="button" onclick="closeConfirm()"
+                        class="flex-1 border border-gray-200 text-gray-600 rounded-xl py-2.5 text-sm font-semibold hover:bg-gray-50 transition-colors">
+                    Hủy
+                </button>
+                <button type="submit"
+                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors">
+                    Xác nhận thuê
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let modalRate = 0;
+
+    function openConfirm(orderId, carName, customerName, dailyRate) {
+        modalRate = dailyRate;
+        document.getElementById('modal-order-id').value = orderId;
+        document.getElementById('modal-subtitle').textContent = carName + ' — ' + customerName;
+        document.getElementById('modal-rate').textContent = Number(dailyRate).toLocaleString('vi-VN') + ' ₫';
+
+        const today = new Date().toISOString().split('T')[0];
+        const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+        const startEl = document.getElementById('modal-start');
+        const endEl = document.getElementById('modal-end');
+        startEl.min = today;
+        startEl.value = today;
+        endEl.min = tomorrow;
+        endEl.value = tomorrow;
+
+        calcTotal();
+        document.getElementById('confirm-modal').classList.remove('hidden');
+    }
+
+    function closeConfirm() {
+        document.getElementById('confirm-modal').classList.add('hidden');
+    }
+
+    function calcTotal() {
+        const start = new Date(document.getElementById('modal-start').value);
+        const end   = new Date(document.getElementById('modal-end').value);
+        const days  = Math.round((end - start) / 86400000);
+        const wrap  = document.getElementById('modal-total-wrap');
+        if (days > 0) {
+            document.getElementById('modal-days').textContent = days + ' ngày';
+            document.getElementById('modal-total').textContent = (days * modalRate).toLocaleString('vi-VN') + ' ₫';
+            wrap.classList.remove('hidden');
+        } else {
+            wrap.classList.add('hidden');
+        }
+    }
+
+    document.getElementById('modal-start').addEventListener('change', function () {
+        const next = new Date(this.value);
+        next.setDate(next.getDate() + 1);
+        document.getElementById('modal-end').min = next.toISOString().split('T')[0];
+        if (document.getElementById('modal-end').value <= this.value)
+            document.getElementById('modal-end').value = next.toISOString().split('T')[0];
+        calcTotal();
+    });
+    document.getElementById('modal-end').addEventListener('change', calcTotal);
+
+    document.getElementById('confirm-modal').addEventListener('click', function (e) {
+        if (e.target === this) closeConfirm();
+    });
+</script>
+}

@@ -1,0 +1,54 @@
+@model CarWebsite.Models.TermsOfService
+@{ ViewData["Title"] = "Thống kê đồng ý — " + Model.Version; Layout = "~/Views/Shared/_DashboardLayout.cshtml"; }
+
+<div class="space-y-6">
+    <div class="flex items-center gap-4">
+        <a asp-controller="TermsPolicy" asp-action="Index" class="text-gray-500 hover:text-navy transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+        </a>
+        <div>
+            <h1 class="text-2xl font-black text-navy">Thống kê đồng ý — @Model.Version</h1>
+            <p class="text-gray-500 text-sm">Tổng cộng @Model.Agreements.Count người dùng đã đồng ý</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="font-bold text-navy">Danh sách người dùng đã đồng ý</h2>
+        </div>
+        @if (!Model.Agreements.Any())
+        {
+            <div class="text-center py-16 text-gray-400 text-sm">Chưa có người dùng nào đồng ý phiên bản này.</div>
+        }
+        else
+        {
+            <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                        <th class="px-6 py-3 text-left font-semibold text-gray-600">#</th>
+                        <th class="px-6 py-3 text-left font-semibold text-gray-600">Người dùng</th>
+                        <th class="px-6 py-3 text-left font-semibold text-gray-600">Email</th>
+                        <th class="px-6 py-3 text-left font-semibold text-gray-600">Thời điểm đồng ý</th>
+                        <th class="px-6 py-3 text-left font-semibold text-gray-600">IP</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @{ int i = 1; }
+                    @foreach (var a in Model.Agreements.OrderByDescending(x => x.AgreedAt))
+                    {
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-3 text-gray-400">@i</td>
+                            <td class="px-6 py-3 font-medium text-navy">@a.User.Name</td>
+                            <td class="px-6 py-3 text-gray-500">@a.User.Email</td>
+                            <td class="px-6 py-3 text-gray-500">@a.AgreedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                            <td class="px-6 py-3 text-gray-400 font-mono text-xs">@(a.IpAddress ?? "—")</td>
+                        </tr>
+                        i++;
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

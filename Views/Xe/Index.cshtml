@@ -1,0 +1,184 @@
+@using CarWebsite.Models
+@model List<Car>
+@{
+    ViewData["Title"] = "Tất cả xe";
+    var brands = ViewBag.AllBrands as string[] ?? [];
+    var types = ViewBag.AllTypes as string[] ?? [];
+    var fuels = ViewBag.AllFuels as string[] ?? [];
+    string selBrand = ViewBag.SelectedBrand ?? "Tất cả";
+    string selType = ViewBag.SelectedType ?? "Tất cả";
+    string selFuel = ViewBag.SelectedFuel ?? "Tất cả";
+    string q = ViewBag.SearchQ ?? "";
+}
+
+<div class="pt-24 pb-16 min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <div class="section-line mb-3"></div>
+            <h1 class="text-3xl sm:text-4xl font-black text-navy">Tất Cả Xe</h1>
+            <p class="text-gray-500 mt-2">@Model.Count mẫu xe đang có sẵn</p>
+        </div>
+
+        @* Filters *@
+        <form method="get" class="bg-white rounded-2xl p-6 shadow-sm mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="relative">
+                    <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Tìm kiếm</label>
+                    <input type="text" name="q" id="searchInput" value="@q" placeholder="Tên xe, thương hiệu..."
+                           class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30"
+                           autocomplete="off" />
+                    <div id="searchSuggestions" class="hidden absolute top-full left-0 right-0 z-50 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Thương hiệu</label>
+                    <select name="brand" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        @foreach (var b in brands)
+                        {
+                            <option value="@b" selected="@(b == selBrand)">@b</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Loại xe</label>
+                    <select name="type" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        @foreach (var t in types)
+                        {
+                            <option value="@t" selected="@(t == selType)">@t</option>
+                        }
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wider">Nhiên liệu</label>
+                    <select name="fuel" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                        @foreach (var f in fuels)
+                        {
+                            <option value="@f" selected="@(f == selFuel)">@f</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-4">
+                <button type="submit" class="bg-brand hover:bg-red-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
+                    Tìm kiếm
+                </button>
+                <a asp-controller="Xe" asp-action="Index" class="border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors">
+                    Xóa bộ lọc
+                </a>
+            </div>
+        </form>
+
+@section Scripts {
+<script>
+(function() {
+    const input = document.getElementById('searchInput');
+    const box = document.getElementById('searchSuggestions');
+    let timer;
+
+    input.addEventListener('input', function() {
+        clearTimeout(timer);
+        const q = this.value.trim();
+        if (q.length < 2) { box.classList.add('hidden'); return; }
+
+        timer = setTimeout(async () => {
+            try {
+                const res = await fetch('/Xe/SearchSuggest?q=' + encodeURIComponent(q));
+                const data = await res.json();
+                if (!data.length) { box.classList.add('hidden'); return; }
+
+                box.innerHTML = data.map(item =>
+                    `<div class="suggest-item px-4 py-2.5 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0"
+                          data-name="${item.name.replace(/"/g, '&quot;')}">
+                        <p class="text-xs text-gray-400">${item.brand}</p>
+                        <p class="text-sm font-semibold text-navy">${item.name}</p>
+                    </div>`
+                ).join('');
+
+                box.querySelectorAll('.suggest-item').forEach(el => {
+                    el.addEventListener('click', function() {
+                        input.value = this.dataset.name;
+                        box.classList.add('hidden');
+                        input.closest('form').submit();
+                    });
+                });
+
+                box.classList.remove('hidden');
+            } catch(e) {}
+        }, 300);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !box.contains(e.target))
+            box.classList.add('hidden');
+    });
+})();
+</script>
+}
+
+        @* Car Grid *@
+        @if (!Model.Any())
+        {
+            <div class="text-center py-20">
+                <p class="text-6xl mb-4">🚗</p>
+                <p class="text-gray-500 text-lg">Không tìm thấy xe phù hợp.</p>
+                <a asp-controller="Xe" asp-action="Index" class="mt-4 inline-block text-brand font-semibold">Xem tất cả xe →</a>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach (var car in Model)
+                {
+                    <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col">
+                        <a asp-controller="Xe" asp-action="Detail" asp-route-slug="@car.Slug" class="block flex-1">
+                            <div class="relative h-52 overflow-hidden">
+                                <img src="@car.Image" alt="@car.Name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                                @if (!string.IsNullOrEmpty(car.Badge))
+                                {
+                                    <span class="absolute top-3 left-3 bg-brand text-white text-xs font-bold px-2.5 py-1 rounded-full">@car.Badge</span>
+                                }
+                                <span class="absolute top-3 right-3 bg-white/90 text-navy text-xs font-semibold px-2.5 py-1 rounded-full">@car.Fuel</span>
+                                @if (!string.IsNullOrEmpty(car.Model3DUrl))
+                                {
+                                    <span class="absolute bottom-3 left-3 bg-black/60 text-white text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/></svg>
+                                        3D
+                                    </span>
+                                }
+                            </div>
+                            <div class="p-5 pb-4">
+                                <p class="text-xs text-gray-400 mb-1">@car.Brand • @car.Year</p>
+                                <h3 class="font-bold text-navy text-lg mb-2 group-hover:text-brand transition-colors">@car.Name</h3>
+                                <p class="text-brand font-black text-xl">@car.PriceDisplay</p>
+                            </div>
+                        </a>
+                        <div class="px-5 pb-4 flex items-center justify-between border-t border-gray-50 pt-3">
+                            <div class="flex gap-3 text-xs text-gray-400">
+                                <span>@car.Type</span>
+                                <span>•</span>
+                                <span>@car.Specs.GetValueOrDefault("seats","5") chỗ</span>
+                                @if (!string.IsNullOrEmpty(car.Specs.GetValueOrDefault("power","")))
+                                {
+                                    <span>•</span>
+                                    <span>@car.Specs.GetValueOrDefault("power","")</span>
+                                }
+                            </div>
+                            <button
+                                data-slug="@car.Slug"
+                                data-name="@car.Name"
+                                data-price="@car.PriceDisplay"
+                                data-image="@car.Image"
+                                onclick="ssAddFromData(this)"
+                                title="Thêm vào danh sách so sánh"
+                                class="flex items-center gap-1.5 text-xs font-semibold text-navy/60 hover:text-brand hover:border-brand border border-gray-200 px-2.5 py-1.5 rounded-xl transition-colors flex-shrink-0 ml-2">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                So sánh
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

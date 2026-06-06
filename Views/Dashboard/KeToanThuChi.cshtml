@@ -1,0 +1,86 @@
+@using CarWebsite.Models
+@model List<Order>
+@{
+    ViewData["Title"] = "Thu / Chi — Kế Toán";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var tongThu   = (long)(ViewBag.TongThu   ?? 0L);
+    var dangXuLy  = (int) (ViewBag.DangXuLy  ?? 0);
+    var hoatDong  = (int) (ViewBag.HoatDong  ?? 0);
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Quản Lý Thu / Chi</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Xác nhận thanh toán, duyệt hóa đơn GTGT, phiếu thu cọc</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng thu (hoàn tất)</p>
+        <p class="text-2xl font-black text-green-600">@((tongThu / 1_000_000).ToString("N0")) <span class="text-sm font-normal">triệu ₫</span></p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Đơn đang cọc</p>
+        <p class="text-2xl font-black text-blue-600">@dangXuLy</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Giao dịch đang xử lý</p>
+        <p class="text-2xl font-black text-yellow-600">@hoatDong</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-5 border-b border-gray-100">
+        <h2 class="font-bold text-navy">Danh sách giao dịch</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Mã đơn</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Loại</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Giá trị</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Ngày</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var o in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3.5 font-mono text-xs text-navy font-semibold">@o.OrderCode</td>
+                        <td class="px-5 py-3.5">
+                            <p class="font-semibold">@o.CustomerName</p>
+                            <p class="text-xs text-gray-400">@o.Customer?.Email</p>
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-600">@o.CarName</td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2 py-0.5 rounded-full @(o.OrderType == "buy" ? "bg-navy/10 text-navy" : "bg-purple-100 text-purple-700")">
+                                @(o.OrderType == "buy" ? "Mua xe" : "Thuê xe")
+                            </span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                @(o.Status == "Hoàn tất"    ? "bg-green-100 text-green-700" :
+                                  o.Status == "Đã đặt cọc" ? "bg-blue-100 text-blue-700" :
+                                  "bg-gray-100 text-gray-600")">
+                                @o.Status
+                            </span>
+                        </td>
+                        <td class="px-5 py-3.5 text-right font-semibold @(o.Status == "Hoàn tất" ? "text-green-700" : "text-gray-700")">
+                            @o.Amount.ToString("N0") ₫
+                        </td>
+                        <td class="px-5 py-3.5 text-right text-gray-400 text-xs">@o.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="px-5 py-10 text-center text-gray-400">Chưa có giao dịch nào.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

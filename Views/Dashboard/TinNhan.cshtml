@@ -1,0 +1,43 @@
+@using CarWebsite.Models
+@model List<AuditLog>
+@{ ViewData["Title"] = "Tin Nhắn Liên Hệ"; Layout = "~/Views/Shared/_DashboardLayout.cshtml"; }
+
+<h1 class="text-2xl font-black text-navy mb-6">Tin Nhắn Liên Hệ</h1>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    @if (!Model.Any())
+    {
+        <div class="px-5 py-12 text-center text-gray-400">Chưa có tin nhắn nào.</div>
+    }
+    else
+    {
+        <div class="divide-y divide-gray-50">
+            @foreach (var msg in Model)
+            {
+                var parts = (msg.Target ?? "").Split('|');
+                var phone = parts.Length > 0 ? parts[0].Trim() : "";
+                var email = parts.Length > 1 ? parts[1].Trim() : "";
+                <div class="px-6 py-5 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-3 mb-2">
+                                <div class="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-sm flex-shrink-0">
+                                    @msg.UserName[0]
+                                </div>
+                                <div>
+                                    <p class="font-bold text-navy text-sm">@msg.UserName</p>
+                                    <p class="text-xs text-gray-400">
+                                        @if (!string.IsNullOrEmpty(phone)) { <span class="mr-2">📞 @phone</span> }
+                                        @if (!string.IsNullOrEmpty(email)) { <span>✉️ @email</span> }
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="text-gray-600 text-sm ml-12">@msg.Detail</p>
+                        </div>
+                        <p class="text-xs text-gray-400 flex-shrink-0">@msg.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

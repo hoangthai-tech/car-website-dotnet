@@ -1,0 +1,65 @@
+@using CarWebsite.Models
+@model List<Order>
+@{
+    ViewData["Title"] = "Tiến Độ Bàn Giao — Kinh Doanh";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Theo Dõi Tiến Độ Bàn Giao Xe</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Các đơn hàng đang trong quá trình xử lý và bàn giao</p>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+        <div class="text-5xl mb-4">🎉</div>
+        <p class="text-gray-500 font-semibold">Không có đơn hàng nào đang chờ bàn giao.</p>
+        <p class="text-gray-400 text-sm mt-1">Tất cả các đơn đã hoàn tất hoặc chưa có đơn mới.</p>
+    </div>
+}
+else
+{
+    <div class="space-y-4">
+        @foreach (var o in Model)
+        {
+            var progress = o.Status switch
+            {
+                "Chờ xử lý"   => (10, "bg-gray-400"),
+                "Đang lái thử"=> (30, "bg-yellow-500"),
+                "Đã đặt cọc"  => (55, "bg-blue-500"),
+                "Đang giao"   => (80, "bg-indigo-500"),
+                _              => (5,  "bg-gray-300")
+            };
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <p class="font-mono text-xs text-gray-400">@o.OrderCode</p>
+                        <p class="font-bold text-navy text-base">@o.CarName</p>
+                        <p class="text-sm text-gray-500">Khách: <span class="font-semibold">@o.CustomerName</span></p>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">@o.Status</span>
+                        <p class="text-xs text-gray-400 mt-1">@o.CreatedAt.ToString("dd/MM/yyyy")</p>
+                    </div>
+                </div>
+                @* Progress bar *@
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 bg-gray-100 rounded-full h-2">
+                        <div class="h-2 rounded-full @progress.Item2 transition-all" style="width: @progress.Item1%"></div>
+                    </div>
+                    <span class="text-xs font-semibold text-gray-500 w-10 text-right">@progress.Item1%</span>
+                </div>
+                @* Steps *@
+                <div class="flex mt-3 text-xs text-gray-400 justify-between">
+                    @foreach (var step in new[] { "Tiếp nhận", "Lái thử", "Đặt cọc", "Đang giao", "Hoàn tất" })
+                    {
+                        <span>@step</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}

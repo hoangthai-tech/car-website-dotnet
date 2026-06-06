@@ -1,0 +1,284 @@
+@using CarWebsite.Models
+@model List<User>
+@{
+    ViewData["Title"] = "Khách Hàng";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var role = Context.Session.GetString("UserRole");
+    var orderCounts  = ViewBag.OrderCounts  as Dictionary<Guid, int>  ?? new();
+    var orderTotals  = ViewBag.OrderTotals  as Dictionary<Guid, long> ?? new();
+    var customerOrders = ViewBag.CustomerOrders as Dictionary<Guid, List<Order>> ?? new();
+    string q = ViewBag.SearchQ ?? "";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-4 mb-4 text-sm">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm">@TempData["Error"]</div>
+}
+
+<div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Khách Hàng</h1>
+        <p class="text-gray-500 text-sm mt-1">@Model.Count khách hàng đã đăng ký</p>
+    </div>
+</div>
+
+@* Search *@
+<form method="get" class="mb-6">
+    <div class="flex gap-3 max-w-md">
+        <input type="text" name="q" value="@q" placeholder="Tìm theo tên hoặc email..."
+               class="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        <button type="submit" class="bg-brand hover:bg-red-700 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">
+            Tìm
+        </button>
+        @if (!string.IsNullOrWhiteSpace(q))
+        {
+            <a asp-controller="Dashboard" asp-action="KhachHang"
+               class="border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
+                Xoá
+            </a>
+        }
+    </div>
+</form>
+
+@if (!Model.Any())
+{
+    <div class="bg-white rounded-2xl p-16 text-center shadow-sm">
+        <p class="text-5xl mb-4">👤</p>
+        <p class="text-gray-500">Không tìm thấy khách hàng nào.</p>
+    </div>
+}
+else
+{
+    <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-100 bg-gray-50">
+                    <th class="text-left px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Khách hàng</th>
+                    <th class="text-left px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Email</th>
+                    <th class="text-center px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Xác minh</th>
+                    <th class="text-center px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Ngày tham gia</th>
+                    <th class="text-center px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Đơn hàng</th>
+                    <th class="text-right px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Chi tiêu</th>
+                    <th class="text-right px-5 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var c in Model)
+                {
+                    var orders  = orderCounts.GetValueOrDefault(c.Id, 0);
+                    var total   = orderTotals.GetValueOrDefault(c.Id, 0L);
+                    var cOrders = customerOrders.GetValueOrDefault(c.Id, []);
+                    <tr class="hover:bg-gray-50 transition-colors">
+                        <td class="px-5 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-brand/10 flex items-center justify-center text-brand font-bold text-sm flex-shrink-0">
+                                    @c.Name[0]
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-navy">@c.Name</p>
+                                    <p class="text-xs text-gray-400 md:hidden">@c.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-5 py-4 text-gray-500 hidden md:table-cell text-sm">@c.Email</td>
+                        <td class="px-5 py-4 text-center hidden lg:table-cell">
+                            @if (c.EmailVerified)
+                            {
+                                <span class="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    Đã xác minh
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="inline-block bg-yellow-100 text-yellow-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                    Chưa xác minh
+                                </span>
+                            }
+                        </td>
+                        <td class="px-5 py-4 text-center text-gray-500 hidden lg:table-cell text-sm">
+                            @c.CreatedAt.ToString("dd/MM/yyyy")
+                        </td>
+                        <td class="px-5 py-4 text-center">
+                            @if (orders > 0)
+                            {
+                                <span class="inline-block bg-blue-100 text-blue-700 font-bold px-3 py-1 rounded-full text-xs">@orders đơn</span>
+                            }
+                            else
+                            {
+                                <span class="inline-block bg-gray-100 text-gray-400 px-3 py-1 rounded-full text-xs">Chưa có</span>
+                            }
+                        </td>
+                        <td class="px-5 py-4 text-right font-bold text-navy hidden lg:table-cell">
+                            @if (total > 0) { @total.ToString("N0") <text> ₫</text> }
+                            else { <span class="text-gray-300 font-normal">—</span> }
+                        </td>
+                        <td class="px-5 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                @* Xem chi tiết *@
+                                <button type="button"
+                                        onclick="openDetail('@c.Id','@c.Name.Replace("'","\\'")', '@c.Email', '@c.CreatedAt.ToString("dd/MM/yyyy")', @(c.EmailVerified ? "true" : "false"), @orders, '@total.ToString("N0")')"
+                                        class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                    Xem
+                                </button>
+                                @* Xóa — chỉ admin *@
+                                @if (role == "admin")
+                                {
+                                    <form asp-action="KhachHangDelete" asp-controller="Dashboard" method="post" class="inline"
+                                          onsubmit="return confirm('Xóa tài khoản @c.Name? Các đơn hàng của khách sẽ không bị xóa.')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@c.Id" />
+                                        <button type="submit" class="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-lg font-semibold transition-colors">
+                                            Xóa
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+
+                    @* Hidden order data for modal *@
+                    <tr id="orders-@c.Id" class="hidden">
+                        <td colspan="7">
+                            @foreach (var o in cOrders)
+                            {
+                                <span data-code="@o.OrderCode" data-car="@o.CarName"
+                                      data-status="@o.Status" data-amount="@o.Amount.ToString("N0")"
+                                      data-date="@o.CreatedAt.ToString("dd/MM/yyyy")"></span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* Summary stats *@
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+        <div class="bg-white rounded-2xl p-5 shadow-sm">
+            <p class="text-xs text-gray-400 mb-1 uppercase tracking-wider">Tổng khách hàng</p>
+            <p class="text-3xl font-black text-navy">@Model.Count</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm">
+            <p class="text-xs text-gray-400 mb-1 uppercase tracking-wider">Đã đặt hàng</p>
+            <p class="text-3xl font-black text-navy">@Model.Count(c => orderCounts.GetValueOrDefault(c.Id, 0) > 0)</p>
+        </div>
+        <div class="bg-white rounded-2xl p-5 shadow-sm">
+            <p class="text-xs text-gray-400 mb-1 uppercase tracking-wider">Chưa đặt hàng</p>
+            <p class="text-3xl font-black text-navy">@Model.Count(c => orderCounts.GetValueOrDefault(c.Id, 0) == 0)</p>
+        </div>
+    </div>
+}
+
+@* Detail Modal *@
+<div id="detailModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+     onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100">
+            <h2 class="text-lg font-black text-navy">Chi Tiết Khách Hàng</h2>
+            <button onclick="document.getElementById('detailModal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="p-6">
+            @* Avatar + info *@
+            <div class="flex items-center gap-4 mb-6">
+                <div id="d-avatar" class="w-14 h-14 rounded-full bg-brand/10 flex items-center justify-center text-brand font-black text-2xl flex-shrink-0"></div>
+                <div>
+                    <h3 id="d-name" class="text-xl font-black text-navy"></h3>
+                    <p id="d-email" class="text-gray-500 text-sm"></p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-xs text-gray-400 mb-1">Ngày tham gia</p>
+                    <p id="d-date" class="font-semibold text-navy text-sm"></p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-xs text-gray-400 mb-1">Trạng thái email</p>
+                    <p id="d-verified" class="font-semibold text-sm"></p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-xs text-gray-400 mb-1">Tổng đơn hàng</p>
+                    <p id="d-orders" class="font-black text-navy text-xl"></p>
+                </div>
+                <div class="bg-gray-50 rounded-xl p-4">
+                    <p class="text-xs text-gray-400 mb-1">Tổng chi tiêu</p>
+                    <p id="d-total" class="font-black text-navy text-sm"></p>
+                </div>
+            </div>
+            @* Order list *@
+            <div id="d-order-section" class="hidden">
+                <h4 class="font-bold text-navy mb-3 text-sm uppercase tracking-wider">Lịch sử đơn hàng</h4>
+                <div id="d-order-list" class="space-y-2 max-h-52 overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function openDetail(id, name, email, date, verified, orders, total) {
+    document.getElementById('d-avatar').textContent = name[0].toUpperCase();
+    document.getElementById('d-name').textContent   = name;
+    document.getElementById('d-email').textContent  = email;
+    document.getElementById('d-date').textContent   = date;
+    document.getElementById('d-orders').textContent = orders + ' đơn';
+    document.getElementById('d-total').textContent  = orders > 0 ? total + ' ₫' : '—';
+
+    const vEl = document.getElementById('d-verified');
+    if (verified) {
+        vEl.textContent  = '✓ Đã xác minh';
+        vEl.className    = 'font-semibold text-sm text-green-600';
+    } else {
+        vEl.textContent  = '✗ Chưa xác minh';
+        vEl.className    = 'font-semibold text-sm text-yellow-600';
+    }
+
+    // Load orders
+    const orderRow  = document.getElementById('orders-' + id);
+    const orderList = document.getElementById('d-order-list');
+    const orderSec  = document.getElementById('d-order-section');
+    orderList.innerHTML = '';
+
+    if (orderRow) {
+        const spans = orderRow.querySelectorAll('span[data-code]');
+        if (spans.length > 0) {
+            orderSec.classList.remove('hidden');
+            spans.forEach(s => {
+                const statusColor =
+                    s.dataset.status === 'Hoàn tất'    ? 'bg-green-100 text-green-700' :
+                    s.dataset.status === 'Đã đặt cọc'  ? 'bg-blue-100 text-blue-700'  :
+                    s.dataset.status === 'Đang lái thử'? 'bg-yellow-100 text-yellow-700' :
+                    'bg-gray-100 text-gray-600';
+                orderList.innerHTML += `
+                    <div class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+                        <div>
+                            <p class="font-mono text-xs text-gray-400">${s.dataset.code}</p>
+                            <p class="font-semibold text-navy text-sm">${s.dataset.car}</p>
+                            <p class="text-xs text-gray-400">${s.dataset.date}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block text-xs px-2.5 py-1 rounded-full font-semibold ${statusColor} mb-1">${s.dataset.status}</span>
+                            <p class="font-bold text-navy text-sm">${s.dataset.amount} ₫</p>
+                        </div>
+                    </div>`;
+            });
+        } else {
+            orderSec.classList.add('hidden');
+        }
+    } else {
+        orderSec.classList.add('hidden');
+    }
+
+    document.getElementById('detailModal').classList.remove('hidden');
+}
+</script>
+}

@@ -1,0 +1,87 @@
+@using CarWebsite.Models
+@model List<Car>
+@{
+    ViewData["Title"] = "Kiểm Kê Tồn Kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var tongTon = (int)(ViewBag.TongTon ?? 0);
+    var brands  = Model.GroupBy(c => c.Brand).OrderBy(g => g.Key).ToList();
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Kiểm Kê Tồn Kho</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Thống kê số lượng xe theo hãng và loại xe</p>
+    </div>
+    <div class="bg-white rounded-2xl px-6 py-4 shadow-sm border border-gray-100 text-center">
+        <p class="text-xs text-gray-400">Tổng tồn kho</p>
+        <p class="text-3xl font-black text-navy">@tongTon <span class="text-base font-normal text-gray-400">xe</span></p>
+    </div>
+</div>
+
+@* Tổng hợp theo hãng *@
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    @foreach (var brand in brands)
+    {
+        var count = brand.Sum(c => c.Stock);
+        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+            <p class="text-sm font-semibold text-navy">@brand.Key</p>
+            <p class="text-2xl font-black text-blue-600 mt-1">@count <span class="text-sm font-normal text-gray-400">xe</span></p>
+            <p class="text-xs text-gray-400">@brand.Count() model</p>
+        </div>
+    }
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="p-5 border-b border-gray-100">
+        <h2 class="font-bold text-navy">Chi tiết tồn kho theo từng model</h2>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Model xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hãng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Loại</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nhiên liệu</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Tồn kho</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var c in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <img src="@c.Image" alt="" class="w-12 h-8 object-cover rounded" />
+                                <span class="font-semibold text-navy">@c.Name</span>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Brand</td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Type</td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Fuel</td>
+                        <td class="px-5 py-3.5 text-center">
+                            <span class="@(c.Stock <= 0 ? "text-red-600 font-bold" : c.Stock <= 2 ? "text-yellow-600 font-bold" : "text-green-700 font-bold") text-base">
+                                @c.Stock
+                            </span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            @if (c.Stock <= 0)
+                            {
+                                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-700">Hết hàng</span>
+                            }
+                            else if (c.Stock <= 2)
+                            {
+                                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-yellow-100 text-yellow-700">Sắp hết</span>
+                            }
+                            else
+                            {
+                                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">Còn hàng</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

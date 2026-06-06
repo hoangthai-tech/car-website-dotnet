@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Báo Cáo";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    long revenue = ViewBag.TotalRevenue ?? 0;
+    int totalOrders = ViewBag.TotalOrders ?? 0;
+}
+
+<h1 class="text-2xl font-black text-navy mb-6">Báo Cáo & Thống Kê</h1>
+
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+        <p class="text-gray-500 text-sm mb-1">Tổng doanh thu</p>
+        <p class="text-3xl font-black text-green-600">@((revenue / 1_000_000).ToString("N0")) triệu ₫</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+        <p class="text-gray-500 text-sm mb-1">Tổng đơn hàng</p>
+        <p class="text-3xl font-black text-navy">@totalOrders</p>
+    </div>
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center">
+        <p class="text-gray-500 text-sm mb-1">Giá trị TB / đơn</p>
+        <p class="text-3xl font-black text-brand">@(totalOrders > 0 ? ((revenue / totalOrders) / 1_000_000).ToString("N0") : "0") triệu ₫</p>
+    </div>
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="font-bold text-navy mb-4">Đơn hàng theo trạng thái</h2>
+        @{
+            var ordersByStatus = ViewBag.OrdersByStatus as IEnumerable<dynamic> ?? [];
+        }
+        <div class="space-y-3">
+            @foreach (var item in ordersByStatus)
+            {
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">@item.Status</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-semibold text-navy">@item.Count đơn</span>
+                        <span class="text-xs text-gray-400">@(((long)item.Revenue / 1_000_000).ToString("N0")) triệu ₫</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <h2 class="font-bold text-navy mb-4">Xe bán chạy nhất</h2>
+        @{
+            var topCars = ViewBag.TopCars as IEnumerable<dynamic> ?? [];
+            int rank = 1;
+        }
+        <div class="space-y-3">
+            @foreach (var item in topCars)
+            {
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span class="w-6 h-6 rounded-full bg-brand text-white text-xs flex items-center justify-center font-bold">@rank</span>
+                        <span class="text-sm font-semibold text-navy">@item.CarName</span>
+                    </div>
+                    <span class="text-sm text-gray-500">@item.Count đơn</span>
+                </div>
+                rank++;
+            }
+        </div>
+    </div>
+</div>

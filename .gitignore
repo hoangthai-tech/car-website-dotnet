@@ -1,0 +1,36 @@
+## Claude Code
+.claude/
+
+## .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+
+## Publish output
+publish/
+out/
+
+## Secrets & config nhạy cảm
+appsettings.json
+appsettings.Development.json
+
+## Logs
+*.log
+logs/
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Uploads (file người dùng upload, không commit)
+wwwroot/uploads/
+
+## File 3D model quá lớn (1.5GB) — host riêng nếu cần
+wwwroot/models3d/
+
+## Node (nếu có)
+node_modules/

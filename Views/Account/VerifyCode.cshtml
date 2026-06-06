@@ -1,0 +1,132 @@
+@{ ViewData["Title"] = "Xác Minh Email"; Layout = "~/Views/Shared/_Layout.cshtml"; }
+
+<div class="min-h-screen bg-gray-50 flex items-center justify-center pt-20 pb-12 px-4">
+    <div class="w-full max-w-md">
+
+        <div class="text-center mb-8">
+            <div class="w-14 h-14 bg-brand/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-black text-navy">Xác minh email</h1>
+            <p class="text-gray-500 text-sm mt-2">
+                Mã 6 chữ số đã được gửi đến<br/>
+                <span class="font-semibold text-navy">@ViewBag.Email</span>
+            </p>
+        </div>
+
+        @if (TempData["EmailError"] != null)
+        {
+            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm text-center">
+                @TempData["EmailError"]
+            </div>
+        }
+        @if (ViewBag.ResendSuccess != null)
+        {
+            <div class="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 mb-4 text-sm text-center">
+                @ViewBag.ResendSuccess
+            </div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 mb-4 text-sm text-center">
+                @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <p>@err.ErrorMessage</p>
+                }
+            </div>
+        }
+
+        <div class="bg-white rounded-2xl shadow-sm p-8">
+            <form asp-controller="Account" asp-action="VerifyCode" method="post" id="verify-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="email" value="@ViewBag.Email" />
+                <input type="hidden" name="code" id="code-value" />
+
+                <div class="flex justify-center gap-3 mb-8">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"
+                               class="code-digit w-12 h-14 text-center text-2xl font-black text-navy border-2 border-gray-200 rounded-xl focus:border-brand focus:outline-none transition-colors bg-gray-50 focus:bg-white"
+                               autocomplete="off" />
+                    }
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-brand hover:bg-red-700 text-white font-bold py-3.5 rounded-xl transition-colors">
+                    Xác minh
+                </button>
+            </form>
+
+            <div class="mt-5 pt-5 border-t border-gray-100 text-center">
+                <p class="text-sm text-gray-500 mb-3">Không nhận được mã?</p>
+                <form asp-controller="Account" asp-action="ResendCode" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="email" value="@ViewBag.Email" />
+                    <button type="submit"
+                            class="text-brand font-semibold text-sm hover:underline">
+                        Gửi lại mã
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <p class="text-center text-sm text-gray-400 mt-6">
+            <a asp-controller="Account" asp-action="Register" class="hover:text-brand">Quay lại đăng ký</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const digits = document.querySelectorAll('.code-digit');
+    const codeInput = document.getElementById('code-value');
+    const form = document.getElementById('verify-form');
+
+    digits.forEach((el, i) => {
+        el.addEventListener('input', function () {
+            this.value = this.value.replace(/\D/g, '').slice(-1);
+            if (this.value && i < digits.length - 1) digits[i + 1].focus();
+            syncCode();
+        });
+
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Backspace' && !this.value && i > 0) {
+                digits[i - 1].focus();
+                digits[i - 1].value = '';
+                syncCode();
+            }
+        });
+
+        el.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+            [...text].slice(0, 6).forEach((ch, j) => {
+                if (digits[i + j]) digits[i + j].value = ch;
+            });
+            const next = Math.min(i + text.length, digits.length - 1);
+            digits[next].focus();
+            syncCode();
+        });
+    });
+
+    function syncCode() {
+        codeInput.value = [...digits].map(d => d.value).join('');
+    }
+
+    form.addEventListener('submit', function (e) {
+        syncCode();
+        if (codeInput.value.length !== 6) {
+            e.preventDefault();
+            digits[0].focus();
+        }
+    });
+
+    digits[0].focus();
+})();
+</script>
+}

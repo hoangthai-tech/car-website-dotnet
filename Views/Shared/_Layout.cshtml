@@ -1,0 +1,384 @@
+﻿@{
+    var cc = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var ca = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    bool isHeroPage = cc == "Home" && ca == "Index";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " — AutoHT" : "AutoHT — Xe Sang Trọng Hàng Đầu")</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { brand: '#D71920', navy: '#001C3D' },
+                    animation: { fadeInUp: 'fadeInUp 0.6s ease forwards' },
+                    keyframes: { fadeInUp: { '0%': { opacity: '0', transform: 'translateY(20px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } } }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hero-overlay { background: linear-gradient(to right, rgba(0,28,61,0.85) 0%, rgba(0,28,61,0.4) 60%, transparent 100%); }
+        .section-line { width: 48px; height: 4px; background: #D71920; border-radius: 2px; }
+        [x-cloak] { display: none !important; }
+
+        /* ── Active nav link ── */
+        .nav-link { position: relative; }
+        .nav-active {
+            color: #D71920 !important;
+            font-weight: 700;
+        }
+        .nav-active::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 75%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #D71920, transparent);
+            border-radius: 2px;
+        }
+    </style>
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body class="bg-white text-gray-900 font-sans">
+
+    @* NAVBAR *@
+    <nav class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" id="navbar">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-18 py-4">
+                <a asp-controller="Home" asp-action="Index" class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
+                        <span class="text-white font-black text-sm">A</span>
+                    </div>
+                    <span class="text-white font-black text-xl tracking-tight">Auto<span class="text-brand">HT</span></span>
+                </a>
+
+                <div class="hidden md:flex items-center gap-6">
+                    <a asp-controller="Home" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "Home" ? "nav-active" : "text-white/80 hover:text-white font-medium")">Trang chủ</a>
+                    <a asp-controller="Xe" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "Xe" ? "nav-active" : "text-white/80 hover:text-white font-medium")">Xe</a>
+                    <a asp-controller="ThueXe" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "ThueXe" ? "nav-active" : "text-white/80 hover:text-white font-medium")">Thuê xe</a>
+                    <a asp-controller="UuDai" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "UuDai" ? "nav-active" : "text-white/80 hover:text-white font-medium")">Ưu đãi</a>
+                    <a asp-controller="TinTuc" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "TinTuc" ? "nav-active" : "text-white/80 hover:text-white font-medium")">Tin tức</a>
+                    <a asp-controller="SoSanh" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "SoSanh" ? "nav-active" : "text-white/80 hover:text-white font-medium")">So sánh</a>
+                    <a asp-controller="LienHe" asp-action="Index" class="nav-link text-sm transition-colors @(cc == "LienHe" ? "nav-active" : "text-white/80 hover:text-white font-medium")">Liên hệ</a>
+                </div>
+
+                <div class="hidden md:flex items-center gap-3">
+                    @if (Context.Session.GetString("UserId") != null)
+                    {
+                        var role = Context.Session.GetString("UserRole") ?? "";
+                        if (CarWebsite.Models.Roles.AllStaff.Contains(role))
+                        {
+                            <a asp-controller="Dashboard" asp-action="Index" class="text-white/80 hover:text-white text-sm font-medium">
+                                @CarWebsite.Models.Roles.DisplayName(role)
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Profile" asp-action="Index" class="text-white/80 hover:text-white text-sm font-medium">@Context.Session.GetString("UserName")</a>
+                        }
+                        <a asp-controller="Account" asp-action="Logout" class="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors">Đăng xuất</a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="text-white/80 hover:text-white text-sm font-medium">Đăng nhập</a>
+                        <a asp-controller="Account" asp-action="Register" class="bg-brand hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">Đăng ký</a>
+                    }
+                </div>
+
+                <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="md:hidden text-white p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+            </div>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-navy/95 backdrop-blur-sm px-4 pb-4">
+            <div class="flex flex-col gap-3 pt-2">
+                <a asp-controller="Home" asp-action="Index" class="text-sm py-2 @(cc == "Home" ? "text-brand font-bold" : "text-white/80 hover:text-white")">Trang chủ</a>
+                <a asp-controller="Xe" asp-action="Index" class="text-sm py-2 @(cc == "Xe" ? "text-brand font-bold" : "text-white/80 hover:text-white")">Xe</a>
+                <a asp-controller="ThueXe" asp-action="Index" class="text-sm py-2 @(cc == "ThueXe" ? "text-brand font-bold" : "text-white/80 hover:text-white")">Thuê xe</a>
+                <a asp-controller="UuDai" asp-action="Index" class="text-sm py-2 @(cc == "UuDai" ? "text-brand font-bold" : "text-white/80 hover:text-white")">Ưu đãi</a>
+                <a asp-controller="TinTuc" asp-action="Index" class="text-sm py-2 @(cc == "TinTuc" ? "text-brand font-bold" : "text-white/80 hover:text-white")">Tin tức</a>
+                <a asp-controller="SoSanh" asp-action="Index" class="text-sm py-2 @(cc == "SoSanh" ? "text-brand font-bold" : "text-white/80 hover:text-white")">So sánh</a>
+                <a asp-controller="LienHe" asp-action="Index" class="text-sm py-2 @(cc == "LienHe" ? "text-brand font-bold" : "text-white/80 hover:text-white")">Liên hệ</a>
+                @if (Context.Session.GetString("UserId") != null)
+                {
+                    <a asp-controller="Account" asp-action="Logout" class="text-brand text-sm py-2">Đăng xuất</a>
+                }
+                else
+                {
+                    <a asp-controller="Account" asp-action="Login" class="text-white/80 hover:text-white text-sm py-2">Đăng nhập</a>
+                    <a asp-controller="Account" asp-action="Register" class="text-brand text-sm py-2">Đăng ký</a>
+                }
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    @* FOOTER *@
+    <footer class="bg-navy text-white pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-10 pb-10 border-b border-white/10">
+                <div class="md:col-span-1">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center"><span class="text-white font-black text-sm">A</span></div>
+                        <span class="font-black text-xl">Auto<span class="text-brand">HT</span></span>
+                    </div>
+                    <p class="text-white/60 text-sm leading-relaxed">Đại lý xe cao cấp hàng đầu Việt Nam. Cam kết chính hãng, dịch vụ đẳng cấp.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4 text-sm uppercase tracking-wider">Khám phá</h4>
+                    <ul class="space-y-2 text-white/60 text-sm">
+                        <li><a asp-controller="Xe" asp-action="Index" class="hover:text-white transition-colors">Xem tất cả xe</a></li>
+                        <li><a asp-controller="ThueXe" asp-action="Index" class="hover:text-white transition-colors">Thuê xe</a></li>
+                        <li><a asp-controller="SoSanh" asp-action="Index" class="hover:text-white transition-colors">So sánh xe</a></li>
+                        <li><a asp-controller="TinTuc" asp-action="Index" class="hover:text-white transition-colors">Tin tức</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4 text-sm uppercase tracking-wider">Hỗ trợ</h4>
+                    <ul class="space-y-2 text-white/60 text-sm">
+                        <li><a asp-controller="LienHe" asp-action="Index" class="hover:text-white transition-colors">Liên hệ</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Chính sách bảo hành</a></li>
+                        <li><a asp-controller="UuDai" asp-action="Index" class="hover:text-white transition-colors">Ưu đãi cho khách hàng</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold mb-4 text-sm uppercase tracking-wider">Liên hệ</h4>
+                    <ul class="space-y-2 text-white/60 text-sm">
+                        <li>📍 123 Đường Lê Lợi, Q.1, TP.HCM</li>
+                        <li>📞 0937 907 149</li>
+                        <li>✉️ autoelite123leloi@gmail.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p class="text-white/40 text-sm">&copy; @DateTime.Now.Year AutoHT. Tất cả quyền được bảo lưu.</p>
+                <p class="text-white/40 text-xs">Powered by ASP.NET Core + SQL Server</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Navbar scroll effect — chỉ trong suốt trên trang chủ (hero)
+        const navbar = document.getElementById('navbar');
+        const isHeroPage = @(isHeroPage ? "true" : "false");
+
+        function updateNav() {
+            if (!isHeroPage || window.scrollY > 50) {
+                navbar.classList.add('bg-navy/95', 'backdrop-blur-sm', 'shadow-lg');
+            } else {
+                navbar.classList.remove('bg-navy/95', 'backdrop-blur-sm', 'shadow-lg');
+            }
+        }
+        window.addEventListener('scroll', updateNav);
+        updateNav();
+
+        // Fade-in on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) { e.target.classList.add('animate-fadeInUp'); e.target.style.opacity = '1'; observer.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(el => { el.style.opacity = '0'; observer.observe(el); });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        var btn = form.querySelector('button[type="submit"]');
+        if (!btn || btn.dataset.submitting) return;
+        btn.dataset.submitting = '1';
+        var orig = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Đang xử lý...';
+        setTimeout(function () {
+            btn.disabled = false;
+            btn.innerHTML = orig;
+            delete btn.dataset.submitting;
+        }, 8000);
+    }, true);
+    </script>
+
+    @* ── THANH SO SANH XE (Floating comparison bar) ── *@
+    <div id="ss-bar"
+         class="fixed bottom-0 left-0 right-0 z-40 shadow-2xl transition-transform duration-300"
+         style="background:linear-gradient(135deg,#000d1a 0%,#001428 60%,#001C3D 100%);border-top:2px solid #D71920;transform:translateY(100%);display:none;">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-4">
+            @* Label *@
+            <div class="flex-shrink-0 hidden sm:block pr-1">
+                <p class="text-white/35 text-xs uppercase tracking-widest leading-none mb-1">So sánh xe</p>
+                <p class="text-white font-black text-sm leading-none" id="ss-count-label"></p>
+            </div>
+            <div class="w-px h-10 bg-white/10 flex-shrink-0 hidden sm:block"></div>
+            @* Car slots *@
+            <div class="flex-1 flex items-center gap-3 overflow-x-auto" id="ss-slots" style="scrollbar-width:none;-ms-overflow-style:none;"></div>
+            @* Actions *@
+            <div class="flex items-center gap-2 flex-shrink-0 ml-auto">
+                <button onclick="ssClear()"
+                        class="text-white/50 hover:text-white/80 text-xs px-3 py-2 rounded-xl border border-white/15 hover:border-white/35 transition-all whitespace-nowrap">
+                    Xóa tất cả
+                </button>
+                <a id="ss-go-btn" href="#"
+                   class="bg-brand hover:bg-red-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 shadow-lg shadow-red-900/40">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    So sánh ngay
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        const SS_KEY = 'soSanhList';
+
+        function ssLoad() {
+            try { return JSON.parse(localStorage.getItem(SS_KEY) || '[]'); } catch { return []; }
+        }
+        function ssSave(list) { localStorage.setItem(SS_KEY, JSON.stringify(list)); ssRender(); }
+
+        window.ssAdd = function (slug, name, price, image) {
+            const list = ssLoad();
+            if (list.some(x => x.slug === slug)) { ssToast('Xe này đã có trong danh sách so sánh.'); return; }
+            if (list.length >= 3) { ssToast('Chỉ được so sánh tối đa 3 xe cùng lúc.'); return; }
+            list.push({ slug, name, price, image });
+            ssSave(list);
+            ssToast('Đã thêm "' + name + '" vào so sánh!');
+        };
+
+        window.ssRemove = function (slug) { ssSave(ssLoad().filter(x => x.slug !== slug)); };
+        window.ssClear  = function ()     { localStorage.removeItem(SS_KEY); ssRender(); };
+
+        window.ssAddFromData = function (btn) {
+            ssAdd(btn.dataset.slug, btn.dataset.name, btn.dataset.price, btn.dataset.image);
+        };
+
+        function ssToast(msg) {
+            const el = document.createElement('div');
+            el.className = 'fixed top-24 left-1/2 z-[70] bg-navy text-white text-sm font-semibold px-5 py-3 rounded-xl shadow-2xl pointer-events-none transition-opacity';
+            el.style.cssText = 'transform:translateX(-50%);opacity:1;';
+            el.textContent = msg;
+            document.body.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; }, 2000);
+            setTimeout(() => el.remove(), 2500);
+        }
+
+        function ssRender() {
+            const list  = ssLoad();
+            const bar   = document.getElementById('ss-bar');
+            const slots = document.getElementById('ss-slots');
+            const btn   = document.getElementById('ss-go-btn');
+            if (!bar) return;
+
+            if (!list.length) {
+                bar.style.transform = 'translateY(100%)';
+                setTimeout(() => { bar.style.display = 'none'; }, 300);
+                return;
+            }
+
+            bar.style.display = 'block';
+            requestAnimationFrame(() => { bar.style.transform = 'translateY(0)'; });
+
+            // Cập nhật label số xe
+            const countEl = document.getElementById('ss-count-label');
+            if (countEl) countEl.textContent = list.length + '/3 xe';
+
+            // Render thẻ xe
+            let html = list.map(item => `
+                <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:16px;padding:8px 12px;flex-shrink:0;min-width:195px;max-width:220px;transition:background 0.2s">
+                    <img src="${item.image}" alt="${item.name}"
+                         style="width:60px;height:42px;object-fit:cover;border-radius:10px;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,0.12)" />
+                    <div style="flex:1;min-width:0;overflow:hidden">
+                        <p style="color:#fff;font-weight:700;font-size:12px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.name}</p>
+                        <p style="color:#ff8080;font-weight:900;font-size:13px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.price}</p>
+                    </div>
+                    <button onclick="ssRemove('${item.slug}')"
+                            style="color:rgba(255,255,255,0.35);flex-shrink:0;padding:4px;border-radius:8px;border:none;background:transparent;cursor:pointer;line-height:0;transition:color 0.15s"
+                            onmouseover="this.style.color='rgba(255,255,255,0.9)'"
+                            onmouseout="this.style.color='rgba(255,255,255,0.35)'">
+                        <svg style="width:14px;height:14px;display:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+
+            // Thêm slot trống nếu < 3 xe
+            if (list.length < 3) {
+                html += `<a href="/Xe" style="display:flex;align-items:center;gap:10px;border:1.5px dashed rgba(255,255,255,0.18);border-radius:16px;padding:8px 16px;flex-shrink:0;min-width:160px;text-decoration:none;transition:border-color 0.2s"
+                            onmouseover="this.style.borderColor='rgba(255,255,255,0.35)'"
+                            onmouseout="this.style.borderColor='rgba(255,255,255,0.18)'">
+                    <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                        <svg style="width:16px;height:16px;color:rgba(255,255,255,0.3)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </div>
+                    <p style="color:rgba(255,255,255,0.35);font-size:12px;font-weight:600;white-space:nowrap">+ Thêm xe ${list.length + 1}</p>
+                </a>`;
+            }
+
+            slots.innerHTML = html;
+
+            // Điều chỉnh nút so sánh
+            const canCompare = list.length >= 2;
+            const slugParts  = list.map((x, i) => `slug${i+1}=${encodeURIComponent(x.slug)}`).join('&');
+            btn.href         = '/SoSanh?' + slugParts;
+            btn.style.opacity       = canCompare ? '1' : '0.4';
+            btn.style.pointerEvents = canCompare ? 'auto' : 'none';
+            btn.title = canCompare ? '' : 'Cần ít nhất 2 xe để so sánh';
+        }
+
+        document.addEventListener('DOMContentLoaded', ssRender);
+        window.addEventListener('storage', function (e) { if (e.key === SS_KEY) ssRender(); });
+    })();
+    </script>
+
+    @* Floating contact buttons *@
+    <div class="fixed bottom-6 right-5 z-50 flex flex-col gap-3">
+        @* Zalo *@
+        <a href="https://zalo.me/0937907149" target="_blank" rel="noopener"
+           title="Chat Zalo"
+           class="group relative w-13 h-13 flex items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110"
+           style="width:52px;height:52px;background:#0068FF;">
+            <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;">
+                <text x="50%" y="58%" dominant-baseline="middle" text-anchor="middle"
+                      font-family="Arial Black,Arial" font-weight="900" font-size="22" fill="white">Z</text>
+            </svg>
+            <span class="absolute right-14 bg-gray-800 text-white text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Chat Zalo
+            </span>
+            @* Pulse ring *@
+            <span class="absolute inset-0 rounded-full animate-ping opacity-30" style="background:#0068FF;"></span>
+        </a>
+
+        @* Phone *@
+        <a href="tel:0937907149"
+           title="Gọi ngay"
+           class="group relative w-13 h-13 flex items-center justify-center rounded-full shadow-lg transition-transform hover:scale-110"
+           style="width:52px;height:52px;background:#22c55e;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2" style="width:26px;height:26px;">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"/>
+            </svg>
+            <span class="absolute right-14 bg-gray-800 text-white text-xs font-semibold px-2.5 py-1 rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                0937 907 149
+            </span>
+            <span class="absolute inset-0 rounded-full animate-ping opacity-30" style="background:#22c55e;"></span>
+        </a>
+    </div>
+</body>
+</html>

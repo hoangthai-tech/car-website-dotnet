@@ -1,0 +1,126 @@
+@using CarWebsite.Models
+@model List<PreDeliveryOrder>
+@{
+    ViewData["Title"] = "Chuẩn Bị Xe Giao";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+    var readyOrders = (ViewBag.ReadyOrders as List<Order>) ?? [];
+    var staff = (ViewBag.Staff as List<User>) ?? [];
+    string StatusLabel(string s) => s switch { "pending" => "Chờ chuẩn bị", "inprogress" => "Đang chuẩn bị", "done" => "Sẵn sàng giao", _ => s };
+    string StatusCls(string s) => s switch { "done" => "bg-green-100 text-green-700", "inprogress" => "bg-blue-100 text-blue-700", _ => "bg-yellow-100 text-yellow-700" };
+}
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+@if (TempData["Error"] != null)   { <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 mb-4 text-sm">@TempData["Error"]</div> }
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Chuẩn Bị & Giao Xe</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Lệnh chuẩn bị xe — kiểm tra trước bàn giao khách hàng</p>
+    </div>
+    @if (readyOrders.Any())
+    {
+        <button onclick="document.getElementById('addModal').classList.remove('hidden')" class="bg-brand hover:bg-red-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Tạo lệnh chuẩn bị
+        </button>
+    }
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Đơn hàng</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Khách hàng</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Phụ trách</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-500 text-xs uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var pdo in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3.5 font-mono text-xs font-bold text-navy">@(pdo.Order?.OrderCode ?? "—")</td>
+                        <td class="px-4 py-3.5 font-semibold text-gray-700">@(pdo.Order?.Customer?.Name ?? "—")</td>
+                        <td class="px-4 py-3.5 text-xs text-gray-600">
+                            <div>@(pdo.VehicleUnit?.Car?.Name ?? "—")</div>
+                            <div class="font-mono text-gray-400">@(pdo.VehicleUnit?.Vin ?? "—")</div>
+                        </td>
+                        <td class="px-4 py-3.5 text-xs text-gray-600">@(pdo.AssignedTo?.Name ?? "Chưa phân công")</td>
+                        <td class="px-4 py-3.5 text-center">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold @StatusCls(pdo.Status)">@StatusLabel(pdo.Status)</span>
+                        </td>
+                        <td class="px-4 py-3.5 text-right">
+                            <div class="flex gap-1.5 justify-end">
+                                @if (pdo.Status == "pending")
+                                {
+                                    <form asp-action="ChuanBiXeUpdateStatus" asp-controller="Dashboard" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@pdo.Id" />
+                                        <input type="hidden" name="status" value="inprogress" />
+                                        <button type="submit" class="text-xs bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-1.5 rounded-lg font-semibold">Bắt đầu</button>
+                                    </form>
+                                }
+                                @if (pdo.Status == "inprogress")
+                                {
+                                    <form asp-action="ChuanBiXeUpdateStatus" asp-controller="Dashboard" method="post" class="inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@pdo.Id" />
+                                        <input type="hidden" name="status" value="done" />
+                                        <button type="submit" class="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-3 py-1.5 rounded-lg font-semibold">Hoàn xong</button>
+                                    </form>
+                                }
+                                @if (pdo.Status == "done")
+                                {
+                                    <form asp-action="XacNhanXuatKho" asp-controller="Dashboard" method="post" class="inline" onsubmit="return confirm('Xác nhận xuất kho và giao xe cho khách?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="orderId" value="@pdo.OrderId" />
+                                        <button type="submit" class="text-xs bg-brand hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-semibold">Xuất kho & Giao xe</button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any()) { <tr><td colspan="6" class="px-4 py-10 text-center text-gray-400">Chưa có lệnh chuẩn bị xe nào.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@* Add Pre-Delivery Order Modal *@
+<div id="addModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50" onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-black text-navy">Tạo Lệnh Chuẩn Bị Xe</h2>
+            <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">✕</button>
+        </div>
+        <form asp-action="ChuanBiXeCreate" asp-controller="Dashboard" method="post" class="space-y-4">
+            @Html.AntiForgeryToken()
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Đơn hàng <span class="text-red-500">*</span></label>
+                <select name="orderId" required class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                    <option value="">-- Chọn đơn hàng --</option>
+                    @foreach (var o in readyOrders) { <option value="@o.Id">@o.OrderCode — @(o.Customer?.Name ?? "—")</option> }
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Phụ trách chuẩn bị</label>
+                <select name="assignedToId" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30">
+                    <option value="">-- Chưa phân công --</option>
+                    @foreach (var s in staff) { <option value="@s.Id">@s.Name</option> }
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Hướng dẫn / Ghi chú</label>
+                <textarea name="instructions" rows="3" placeholder="Kiểm tra nội thất, vệ sinh xe, kiểm tra áp suất lốp..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30 resize-none"></textarea>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')" class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm">Hủy</button>
+                <button type="submit" class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm">Tạo lệnh</button>
+            </div>
+        </form>
+    </div>
+</div>

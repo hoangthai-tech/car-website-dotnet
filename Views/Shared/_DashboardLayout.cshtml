@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — AutoHT Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=2" />
+    <link rel="icon" href="/favicon.svg?v=2" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { brand: '#D71920', navy: '#001C3D' } } }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+<div class="flex min-h-screen">
+    @* Sidebar *@
+    <aside class="w-64 bg-navy flex-shrink-0 flex flex-col fixed h-full z-30">
+        <div class="p-6 border-b border-white/10">
+            <a asp-controller="Home" asp-action="Index" class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-brand rounded-lg flex items-center justify-center">
+                    <span class="text-white font-black text-sm">A</span>
+                </div>
+                <span class="text-white font-black text-lg">Auto<span class="text-brand">HT</span></span>
+            </a>
+            <p class="text-white/40 text-xs mt-1">Dashboard</p>
+        </div>
+
+        <nav class="flex-1 p-4 space-y-0.5 overflow-y-auto">
+            @{
+                var role    = Context.Session.GetString("UserRole") ?? "";
+                var current = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+                Func<string, string> linkClass = action => {
+                    bool active = current == action;
+                    return active
+                        ? "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors bg-brand text-white shadow-sm"
+                        : "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors text-white/70 hover:text-white hover:bg-white/10";
+                };
+
+                bool isAdmin     = role == CarWebsite.Models.Roles.Admin;
+                bool isSale      = role == CarWebsite.Models.Roles.Sale;
+                bool isWarehouse = role == CarWebsite.Models.Roles.Warehouse;
+                bool isAccounting= role == CarWebsite.Models.Roles.Accounting;
+                bool isService   = role == CarWebsite.Models.Roles.Service;
+                bool isLegacy    = role is "manager" or "staff";
+
+                // Xác định section nào đang active để tự mở
+                var tongQuanActions  = new[]{"Index","BaoCao","AuditLog"};
+                var kinhDoanhActions = new[]{"TodoList","KinhDoanhCRM","LaiThu","TaoDonHang","TraGop","KinhDoanhKhachHang","KinhDoanhDonHang","KinhDoanhBanGiao"};
+                var khoActions       = new[]{"KhoXeUnit","ChuanBiXe","KhoDanhMucXe","KhoNhapXuat","KhoTonKho"};
+                var keToanActions    = new[]{"KeToanDuyetDon","KeToanCongNoBanking","KeToanPhieuChi","KeToanHoaHong","KeToanThuChi","KeToanBaoCao"};
+                var kyThuatActions   = new[]{"DichVuPhieuDichVu","DichVuKhoPhuTung","DichVuLichHen","DichVuSuaChua","DichVuBaoHanh"};
+                var quantriActions   = new[]{"Xe","NhanSu","KhachHang","TinNhan","CaiDat","ChinhSach"};
+                var quanlyActions    = new[]{"DonHang","XeChoThue","KhuyenMai","NhanVien"};
+
+                bool openTongQuan  = tongQuanActions.Contains(current);
+                bool openKinhDoanh = kinhDoanhActions.Contains(current);
+                bool openKho       = khoActions.Contains(current);
+                bool openKeToan    = keToanActions.Contains(current);
+                bool openKyThuat   = kyThuatActions.Contains(current);
+                bool openQuanTri   = quantriActions.Contains(current);
+                bool openQuanLy    = quanlyActions.Contains(current);
+
+                // Nếu không có section nào active, mở Tổng quan mặc định
+                if (!openTongQuan && !openKinhDoanh && !openKho && !openKeToan && !openKyThuat && !openQuanTri && !openQuanLy)
+                    openTongQuan = true;
+            }
+
+            @* ── Tổng quan (Admin & legacy) ─── *@
+            @if (isAdmin || isLegacy)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('tong-quan',this)"
+                            class="nav-group-btn @(openTongQuan ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Tổng quan</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openTongQuan ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-tong-quan" class="space-y-0.5 mt-0.5 @(openTongQuan ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="Index"    class="@linkClass("Index")"><span>🏠</span> Dashboard</a>
+                        <a asp-controller="Dashboard" asp-action="BaoCao"   class="@linkClass("BaoCao")"><span>📊</span> Báo cáo tổng quan</a>
+                        <a asp-controller="Dashboard" asp-action="AuditLog" class="@linkClass("AuditLog")"><span>📝</span> Audit Log</a>
+                    </div>
+                </div>
+            }
+
+            @* ── Kinh doanh ─── *@
+            @if (isAdmin || isSale)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('kinh-doanh',this)"
+                            class="nav-group-btn @(openKinhDoanh ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Kinh doanh</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openKinhDoanh ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-kinh-doanh" class="space-y-0.5 mt-0.5 @(openKinhDoanh ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="TodoList"           class="@linkClass("TodoList")"><span>✅</span> Công việc hôm nay</a>
+                        <a asp-controller="Dashboard" asp-action="KinhDoanhCRM"       class="@linkClass("KinhDoanhCRM")"><span>🤝</span> CRM Khách hàng</a>
+                        <a asp-controller="Dashboard" asp-action="LaiThu"             class="@linkClass("LaiThu")"><span>🚗</span> Lịch lái thử</a>
+                        <a asp-controller="Dashboard" asp-action="TaoDonHang"         class="@linkClass("TaoDonHang")"><span>📝</span> Tạo đơn đặt cọc</a>
+                        <a asp-controller="Dashboard" asp-action="TraGop"             class="@linkClass("TraGop")"><span>🏦</span> Tính trả góp</a>
+                        <a asp-controller="Dashboard" asp-action="KinhDoanhKhachHang" class="@linkClass("KinhDoanhKhachHang")"><span>🧑‍💼</span> Quản lý Khách hàng</a>
+                        <a asp-controller="Dashboard" asp-action="KinhDoanhDonHang"   class="@linkClass("KinhDoanhDonHang")"><span>📋</span> Đơn hàng &amp; Hợp đồng</a>
+                        <a asp-controller="Dashboard" asp-action="KinhDoanhBanGiao"   class="@linkClass("KinhDoanhBanGiao")"><span>🚚</span> Tiến độ bàn giao xe</a>
+                    </div>
+                </div>
+            }
+
+            @* ── Kho ─── *@
+            @if (isAdmin || isWarehouse)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('kho',this)"
+                            class="nav-group-btn @(openKho ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Kho</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openKho ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-kho" class="space-y-0.5 mt-0.5 @(openKho ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="KhoXeUnit"    class="@linkClass("KhoXeUnit")"><span>🔑</span> Kho xe — Từng chiếc</a>
+                        <a asp-controller="Dashboard" asp-action="ChuanBiXe"    class="@linkClass("ChuanBiXe")"><span>📦</span> Chuẩn bị &amp; Giao xe</a>
+                        <a asp-controller="Dashboard" asp-action="KhoDanhMucXe" class="@linkClass("KhoDanhMucXe")"><span>🚗</span> Danh mục xe</a>
+                        <a asp-controller="Dashboard" asp-action="KhoNhapXuat"  class="@linkClass("KhoNhapXuat")"><span>📦</span> Nhập / Xuất kho</a>
+                        <a asp-controller="Dashboard" asp-action="KhoTonKho"    class="@linkClass("KhoTonKho")"><span>📋</span> Kiểm kê tồn kho</a>
+                    </div>
+                </div>
+            }
+
+            @* ── Kế toán ─── *@
+            @if (isAdmin || isAccounting)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('ke-toan',this)"
+                            class="nav-group-btn @(openKeToan ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Kế toán</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openKeToan ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-ke-toan" class="space-y-0.5 mt-0.5 @(openKeToan ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="KeToanDuyetDon"      class="@linkClass("KeToanDuyetDon")"><span>✅</span> Duyệt đơn &amp; Thu tiền</a>
+                        <a asp-controller="Dashboard" asp-action="KeToanCongNoBanking" class="@linkClass("KeToanCongNoBanking")"><span>🏦</span> Công nợ ngân hàng</a>
+                        <a asp-controller="Dashboard" asp-action="KeToanPhieuChi"      class="@linkClass("KeToanPhieuChi")"><span>💸</span> Phiếu chi</a>
+                        <a asp-controller="Dashboard" asp-action="KeToanHoaHong"       class="@linkClass("KeToanHoaHong")"><span>🏅</span> Hoa hồng nhân viên</a>
+                        <a asp-controller="Dashboard" asp-action="KeToanThuChi"        class="@linkClass("KeToanThuChi")"><span>💰</span> Quản lý Thu / Chi</a>
+                        <a asp-controller="Dashboard" asp-action="KeToanBaoCao"        class="@linkClass("KeToanBaoCao")"><span>📊</span> Báo cáo dòng tiền</a>
+                    </div>
+                </div>
+            }
+
+            @* ── Kỹ thuật & Hậu mãi ─── *@
+            @if (isAdmin || isService)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('ky-thuat',this)"
+                            class="nav-group-btn @(openKyThuat ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Kỹ thuật &amp; Hậu mãi</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openKyThuat ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-ky-thuat" class="space-y-0.5 mt-0.5 @(openKyThuat ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="DichVuPhieuDichVu" class="@linkClass("DichVuPhieuDichVu")"><span>🔧</span> Phiếu dịch vụ</a>
+                        <a asp-controller="Dashboard" asp-action="DichVuKhoPhuTung"  class="@linkClass("DichVuKhoPhuTung")"><span>🛠️</span> Kho phụ tùng</a>
+                        <a asp-controller="Dashboard" asp-action="DichVuLichHen"     class="@linkClass("DichVuLichHen")"><span>📅</span> Lịch hẹn bảo dưỡng</a>
+                        <a asp-controller="Dashboard" asp-action="DichVuSuaChua"     class="@linkClass("DichVuSuaChua")"><span>⚙️</span> Lệnh sửa chữa</a>
+                        <a asp-controller="Dashboard" asp-action="DichVuBaoHanh"     class="@linkClass("DichVuBaoHanh")"><span>🛡️</span> Lịch sử bảo hành</a>
+                    </div>
+                </div>
+            }
+
+            @* ── Quản trị (Admin only) ─── *@
+            @if (isAdmin)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('quan-tri',this)"
+                            class="nav-group-btn @(openQuanTri ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Quản trị</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openQuanTri ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-quan-tri" class="space-y-0.5 mt-0.5 @(openQuanTri ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="Xe"        class="@linkClass("Xe")"><span>🚗</span> Kho xe (Quản lý)</a>
+                        <a asp-controller="Dashboard" asp-action="NhanSu"    class="@linkClass("NhanSu")"><span>👥</span> Quản lý Nhân sự</a>
+                        <a asp-controller="Dashboard" asp-action="KhachHang" class="@linkClass("KhachHang")"><span>🧑</span> Tài khoản Khách hàng</a>
+                        <a asp-controller="Dashboard" asp-action="TinNhan"   class="@linkClass("TinNhan")"><span>💬</span> Tin nhắn</a>
+                        <a asp-controller="Dashboard" asp-action="CaiDat"    class="@linkClass("CaiDat")"><span>⚙️</span> Cài đặt</a>
+                        <a asp-controller="TermsPolicy" asp-action="Index"
+                           class="@(Context.GetRouteValue("controller")?.ToString() == "TermsPolicy" ? "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors bg-brand text-white shadow-sm" : "flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors text-white/70 hover:text-white hover:bg-white/10")">
+                            <span>📋</span> Chính sách & Điều khoản
+                        </a>
+                    </div>
+                </div>
+            }
+
+            @* ── Legacy (manager/staff giữ nguyên quyền cũ) ─── *@
+            @if (isLegacy)
+            {
+                <div class="nav-group">
+                    <button type="button" onclick="toggleGroup('quan-ly',this)"
+                            class="nav-group-btn @(openQuanLy ? "text-white/60" : "text-white/30")">
+                        <span class="uppercase tracking-wide text-[10px] font-semibold">Quản lý</span>
+                        <svg class="chevron w-3 h-3 transition-transform @(openQuanLy ? "rotate-180" : "")" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="grp-quan-ly" class="space-y-0.5 mt-0.5 @(openQuanLy ? "" : "hidden")">
+                        <a asp-controller="Dashboard" asp-action="DonHang"   class="@linkClass("DonHang")"><span>📋</span> Đơn hàng</a>
+                        <a asp-controller="Dashboard" asp-action="XeChoThue" class="@linkClass("XeChoThue")"><span>🔑</span> Xe cho thuê</a>
+                        <a asp-controller="Dashboard" asp-action="KhuyenMai" class="@linkClass("KhuyenMai")"><span>🏷️</span> Khuyến mãi</a>
+                        @if (role == "manager")
+                        {
+                            <a asp-controller="Dashboard" asp-action="KhachHang" class="@linkClass("KhachHang")"><span>🧑‍💼</span> Khách hàng</a>
+                            <a asp-controller="Dashboard" asp-action="NhanVien"  class="@linkClass("NhanVien")"><span>👥</span> Nhân viên</a>
+                            <a asp-controller="Dashboard" asp-action="BaoCao"    class="@linkClass("BaoCao")"><span>📊</span> Báo cáo</a>
+                        }
+                    </div>
+                </div>
+            }
+        </nav>
+
+        <style>
+            .nav-group { margin-bottom: 2px; }
+            .nav-group-btn {
+                display: flex; align-items: center; justify-content: space-between;
+                width: 100%; padding: 6px 12px; border-radius: 8px;
+                cursor: pointer; transition: color 0.15s;
+                background: transparent; border: none;
+            }
+            .nav-group-btn:hover { color: rgba(255,255,255,0.6) !important; }
+        </style>
+
+        <div class="p-4 border-t border-white/10">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-9 h-9 rounded-full bg-brand flex items-center justify-center text-white font-bold text-sm">
+                    @(Context.Session.GetString("UserName")?[0] ?? 'A')
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-white text-sm font-semibold truncate">@Context.Session.GetString("UserName")</p>
+                    <p class="text-white/40 text-xs">@CarWebsite.Models.Roles.DisplayName(role)</p>
+                </div>
+            </div>
+            <a asp-controller="Account" asp-action="Logout" class="w-full block text-center text-xs text-white/60 hover:text-white py-2 rounded-lg hover:bg-white/5 transition-colors">
+                Đăng xuất
+            </a>
+        </div>
+    </aside>
+
+    @* Main content *@
+    <div class="flex-1 ml-64 p-8">
+        @RenderBody()
+    </div>
+</div>
+@await RenderSectionAsync("Scripts", required: false)
+
+<script>
+function toggleGroup(id, btn) {
+    var el = document.getElementById('grp-' + id);
+    var chevron = btn.querySelector('.chevron');
+    el.classList.toggle('hidden');
+    chevron.classList.toggle('rotate-180');
+    btn.classList.toggle('text-white/30');
+    btn.classList.toggle('text-white/60');
+}
+
+document.addEventListener('submit', function (e) {
+    var form = e.target;
+    var btn = form.querySelector('button[type="submit"]');
+    if (!btn || btn.dataset.submitting) return;
+    btn.dataset.submitting = '1';
+    var orig = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="animate-spin inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/></svg> Đang xử lý...';
+    setTimeout(function () {
+        btn.disabled = false;
+        btn.innerHTML = orig;
+        delete btn.dataset.submitting;
+    }, 8000);
+}, true);
+</script>
+
+@* ── Global Confirmation Modal ─────────────────────────────────────────── *@
+<div id="globalConfirmModal" class="hidden fixed inset-0 z-[999] flex items-center justify-center bg-black/50"
+     onclick="if(event.target===this)closeConfirmModal()">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm mx-4 animate-fade-in">
+        <div class="text-center mb-5">
+            <div class="text-4xl mb-3" id="confirmModalIcon">⚠️</div>
+            <h3 class="text-base font-black text-navy mb-2" id="confirmModalTitle">Xác nhận hành động</h3>
+            <p class="text-sm text-gray-500 leading-relaxed" id="confirmModalMessage"></p>
+        </div>
+        <div class="flex gap-3">
+            <button type="button" onclick="closeConfirmModal()"
+                    class="flex-1 border border-gray-200 hover:bg-gray-50 text-gray-600 font-semibold py-2.5 rounded-xl text-sm transition-colors">
+                Hủy
+            </button>
+            <button type="button" id="confirmModalOk"
+                    class="flex-1 bg-brand hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-sm transition-colors">
+                Xác nhận
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    let _cb = null;
+    window.showConfirmModal = function(message, callback, icon, title) {
+        document.getElementById('confirmModalMessage').textContent = message;
+        document.getElementById('confirmModalIcon').textContent   = icon  || '⚠️';
+        document.getElementById('confirmModalTitle').textContent  = title || 'Xác nhận hành động';
+        document.getElementById('globalConfirmModal').classList.remove('hidden');
+        _cb = callback;
+        return false;
+    };
+    window.closeConfirmModal = function() {
+        document.getElementById('globalConfirmModal').classList.add('hidden');
+        _cb = null;
+    };
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('confirmModalOk').addEventListener('click', function() {
+            var cb = _cb;
+            closeConfirmModal();
+            if (cb) cb();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeConfirmModal();
+        });
+    });
+})();
+</script>
+</body>
+</html>

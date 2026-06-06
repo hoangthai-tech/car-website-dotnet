@@ -1,0 +1,113 @@
+@{
+    ViewData["Title"] = "Tính Trả Góp";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-black text-navy">Công Cụ Tính Trả Góp</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Nhập thông tin để xuất bảng tính chi tiết gốc + lãi theo từng tháng</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <h2 class="font-bold text-navy mb-4">Thông Số Vay</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Giá xe (₫)</label>
+                    <input type="number" id="carPrice" value="1000000000" step="1000000" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Tỷ lệ vay: <span id="loanPctLabel" class="text-brand font-black">70</span>%</label>
+                    <input type="range" id="loanPct" min="50" max="80" value="70" step="5" class="w-full accent-brand" oninput="document.getElementById('loanPctLabel').textContent=this.value" />
+                    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>50%</span><span>80%</span></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Số năm vay: <span id="yearsLabel" class="text-brand font-black">3</span> năm</label>
+                    <input type="range" id="loanYears" min="1" max="7" value="3" step="1" class="w-full accent-brand" oninput="document.getElementById('yearsLabel').textContent=this.value" />
+                    <div class="flex justify-between text-xs text-gray-400 mt-1"><span>1 năm</span><span>7 năm</span></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1.5">Lãi suất (%/năm)</label>
+                    <input type="number" id="interestRate" value="9.5" step="0.1" min="1" max="30" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+                </div>
+                <button onclick="calculate()" class="w-full bg-brand hover:bg-red-700 text-white font-bold py-3 rounded-xl text-sm transition-colors">Tính Ngay</button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3 space-y-4">
+            <div id="summary" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <h2 class="font-bold text-navy mb-4">Tổng Quan</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400">Vốn vay</p><p id="s-loan" class="text-lg font-black text-navy mt-1"></p></div>
+                    <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400">Tiền trả trước</p><p id="s-down" class="text-lg font-black text-green-600 mt-1"></p></div>
+                    <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400">Trả hàng tháng (đầu kỳ)</p><p id="s-monthly" class="text-lg font-black text-brand mt-1"></p></div>
+                    <div class="bg-gray-50 rounded-xl p-3"><p class="text-xs text-gray-400">Tổng lãi phải trả</p><p id="s-interest" class="text-lg font-black text-amber-600 mt-1"></p></div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="p-4 border-b border-gray-100"><h2 class="font-bold text-navy">Bảng Tính Chi Tiết Theo Tháng</h2></div>
+                <div class="overflow-x-auto max-h-[400px]">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="text-left px-4 py-2.5 font-semibold text-gray-500 uppercase">Tháng</th>
+                                <th class="text-right px-4 py-2.5 font-semibold text-gray-500 uppercase">Gốc</th>
+                                <th class="text-right px-4 py-2.5 font-semibold text-gray-500 uppercase">Lãi</th>
+                                <th class="text-right px-4 py-2.5 font-semibold text-gray-500 uppercase">Tổng trả</th>
+                                <th class="text-right px-4 py-2.5 font-semibold text-gray-500 uppercase">Dư nợ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-gray-50">
+                            <tr><td colspan="5" class="px-4 py-8 text-center text-gray-400">Nhập thông số và bấm "Tính Ngay"</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+function fmt(n) { return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' ₫'; }
+
+function calculate() {
+    const price    = parseFloat(document.getElementById('carPrice').value);
+    const pct      = parseFloat(document.getElementById('loanPct').value) / 100;
+    const years    = parseInt(document.getElementById('loanYears').value);
+    const rate     = parseFloat(document.getElementById('interestRate').value) / 100;
+    const months   = years * 12;
+    const loan     = price * pct;
+    const down     = price - loan;
+    const mr       = rate / 12;
+    // Equal principal payment method (dư nợ giảm dần)
+    const principal = loan / months;
+    const tbody    = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    let balance = loan, totalInterest = 0;
+    for (let i = 1; i <= months; i++) {
+        const interest = balance * mr;
+        const total    = principal + interest;
+        totalInterest += interest;
+        balance -= principal;
+        const tr = `<tr class="hover:bg-gray-50">
+            <td class="px-4 py-2.5 font-semibold text-navy">Tháng ${i}</td>
+            <td class="px-4 py-2.5 text-right">${fmt(principal)}</td>
+            <td class="px-4 py-2.5 text-right text-amber-600">${fmt(interest)}</td>
+            <td class="px-4 py-2.5 text-right font-semibold text-brand">${fmt(total)}</td>
+            <td class="px-4 py-2.5 text-right text-gray-400">${fmt(Math.max(0, balance))}</td>
+        </tr>`;
+        tbody.insertAdjacentHTML('beforeend', tr);
+    }
+    // Summary
+    const firstMonth = loan / months + loan * mr;
+    document.getElementById('s-loan').textContent    = fmt(loan);
+    document.getElementById('s-down').textContent    = fmt(down);
+    document.getElementById('s-monthly').textContent = fmt(firstMonth);
+    document.getElementById('s-interest').textContent= fmt(totalInterest);
+    document.getElementById('summary').classList.remove('hidden');
+}
+</script>
+}

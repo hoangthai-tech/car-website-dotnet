@@ -1,0 +1,173 @@
+@using CarWebsite.Models
+@{
+    ViewData["Title"] = "Ưu Đãi";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var rentalCars = ViewBag.RentalCars as List<Car> ?? new();
+}
+
+@section Head {
+<style>
+    @@keyframes shimmer { 0%,100%{opacity:.6} 50%{opacity:1} }
+    .badge-shine { animation: shimmer 2.5s ease-in-out infinite; }
+</style>
+}
+
+@* Hero banner *@
+<div class="relative bg-navy pt-20 pb-16 overflow-hidden">
+    <div class="absolute inset-0 opacity-10"
+         style="background-image:repeating-linear-gradient(45deg,#D71920 0,#D71920 1px,transparent 0,transparent 50%);background-size:24px 24px;"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-12">
+        <span class="inline-block bg-brand/20 text-brand text-xs font-bold uppercase tracking-widest px-4 py-1.5 rounded-full mb-4 badge-shine">
+            Ưu đãi đặc biệt
+        </span>
+        <h1 class="text-4xl sm:text-5xl font-black text-white mb-4">
+            Ưu Đãi Dành Cho<br/>
+            <span class="text-brand">Khách Hàng AutoHT</span>
+        </h1>
+        <p class="text-white/60 max-w-xl mx-auto text-sm sm:text-base">
+            Khám phá các chương trình ưu đãi hấp dẫn khi mua xe, thuê xe và nhiều dịch vụ cao cấp khác.
+        </p>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+
+    @* Mua xe — ưu đãi *@
+    <div class="mb-14 fade-in">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="section-line"></div>
+            <h2 class="text-2xl font-black text-navy">Ưu Đãi Mua Xe</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div class="bg-gradient-to-br from-brand to-red-700 p-6 text-white">
+                    <p class="text-4xl mb-2">🎁</p>
+                    <h3 class="font-black text-lg">Giảm đến 5% tiền xe</h3>
+                    <p class="text-white/80 text-sm mt-1">Áp dụng khi thanh toán một lần</p>
+                </div>
+                <div class="p-5 space-y-2 text-sm text-gray-600">
+                    <p>✅ Thanh toán toàn bộ giá trị xe trong ngày ký hợp đồng</p>
+                    <p>✅ Áp dụng cho tất cả dòng xe có sẵn trong kho</p>
+                    <p>✅ Không giới hạn số lượng</p>
+                    <p class="text-xs text-gray-400 pt-2">HSD: 31/12/2026</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div class="bg-gradient-to-br from-navy to-blue-900 p-6 text-white">
+                    <p class="text-4xl mb-2">🛡️</p>
+                    <h3 class="font-black text-lg">Bảo hành mở rộng miễn phí</h3>
+                    <p class="text-white/80 text-sm mt-1">Thêm 12 tháng bảo hành chính hãng</p>
+                </div>
+                <div class="p-5 space-y-2 text-sm text-gray-600">
+                    <p>✅ Dành cho khách hàng mua xe lần đầu tại AutoHT</p>
+                    <p>✅ Bao gồm bảo dưỡng định kỳ 3 lần miễn phí</p>
+                    <p>✅ Hỗ trợ 24/7 trong suốt thời gian bảo hành</p>
+                    <p class="text-xs text-gray-400 pt-2">HSD: 31/12/2026</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+                <div class="bg-gradient-to-br from-emerald-600 to-green-700 p-6 text-white">
+                    <p class="text-4xl mb-2">🎀</p>
+                    <h3 class="font-black text-lg">Quà tặng tri ân</h3>
+                    <p class="text-white/80 text-sm mt-1">Bộ phụ kiện xe hàng hiệu</p>
+                </div>
+                <div class="p-5 space-y-2 text-sm text-gray-600">
+                    <p>✅ Bộ thảm lót xe cao cấp trị giá 3.000.000 ₫</p>
+                    <p>✅ Camera hành trình chính hãng trị giá 2.500.000 ₫</p>
+                    <p>✅ Áp dụng khi mua xe từ 2 tỷ đồng trở lên</p>
+                    <p class="text-xs text-gray-400 pt-2">HSD: 30/06/2026</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 text-center">
+            <a asp-controller="Xe" asp-action="Index"
+               class="inline-flex items-center gap-2 bg-brand hover:bg-red-700 text-white font-bold px-8 py-3.5 rounded-xl transition-colors text-sm">
+                Xem tất cả xe
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+
+    @* Thuê xe — ưu đãi *@
+    <div class="mb-14 fade-in">
+        <div class="flex items-center gap-3 mb-8">
+            <div class="section-line"></div>
+            <h2 class="text-2xl font-black text-navy">Ưu Đãi Thuê Xe</h2>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div class="bg-gradient-to-r from-navy/5 to-brand/5 border border-brand/20 rounded-2xl p-6 flex gap-5 items-start">
+                <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center text-white text-2xl flex-shrink-0">🏷️</div>
+                <div>
+                    <h3 class="font-black text-navy text-lg mb-1">Thuê 3 ngày tặng 1 ngày</h3>
+                    <p class="text-gray-500 text-sm mb-3">Đặt thuê từ 3 ngày liên tiếp, được tặng thêm 1 ngày miễn phí. Áp dụng cho tất cả dòng xe trong đội thuê.</p>
+                    <span class="inline-block bg-brand/10 text-brand text-xs font-bold px-3 py-1 rounded-full">Tiết kiệm 25%</span>
+                </div>
+            </div>
+            <div class="bg-gradient-to-r from-navy/5 to-brand/5 border border-brand/20 rounded-2xl p-6 flex gap-5 items-start">
+                <div class="w-14 h-14 bg-navy rounded-2xl flex items-center justify-center text-white text-2xl flex-shrink-0">⭐</div>
+                <div>
+                    <h3 class="font-black text-navy text-lg mb-1">Ưu đãi khách hàng thân thiết</h3>
+                    <p class="text-gray-500 text-sm mb-3">Giảm 10% tổng giá trị đơn thuê từ lần thứ 2 trở đi. Không giới hạn số lần sử dụng.</p>
+                    <span class="inline-block bg-navy/10 text-navy text-xs font-bold px-3 py-1 rounded-full">Dành cho thành viên</span>
+                </div>
+            </div>
+        </div>
+
+        @if (rentalCars.Count > 0)
+        {
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <p class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Xe thuê nổi bật</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    @foreach (var car in rentalCars)
+                    {
+                        <div class="group relative rounded-xl overflow-hidden border border-gray-100 hover:border-brand/30 transition-all">
+                            <div class="aspect-video overflow-hidden bg-gray-100">
+                                <img src="@car.Image" alt="@car.Name"
+                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                     onerror="this.src='https://placehold.co/400x225/001C3D/fff?text=@car.Brand'" />
+                            </div>
+                            <div class="p-3">
+                                <p class="font-bold text-navy text-sm truncate">@car.Name</p>
+                                <p class="text-brand font-black text-sm">@car.RentalPricePerDay.ToString("N0") ₫<span class="text-gray-400 font-normal">/ngày</span></p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="mt-6 text-center">
+            <a asp-controller="ThueXe" asp-action="Index"
+               class="inline-flex items-center gap-2 bg-navy hover:bg-navy/90 text-white font-bold px-8 py-3.5 rounded-xl transition-colors text-sm">
+                Xem ưu đãi thuê xe
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </div>
+
+    @* Điều kiện áp dụng *@
+    <div class="bg-gray-50 rounded-2xl p-8 fade-in">
+        <h3 class="font-black text-navy text-lg mb-4">📋 Điều Kiện Áp Dụng</h3>
+        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600">
+            <li class="flex gap-2"><span class="text-brand font-bold">•</span> Ưu đãi chỉ áp dụng cho khách hàng đã xác minh email</li>
+            <li class="flex gap-2"><span class="text-brand font-bold">•</span> Không thể kết hợp nhiều chương trình ưu đãi cùng lúc</li>
+            <li class="flex gap-2"><span class="text-brand font-bold">•</span> AutoHT có quyền thay đổi hoặc kết thúc ưu đãi bất kỳ lúc nào</li>
+            <li class="flex gap-2"><span class="text-brand font-bold">•</span> Liên hệ nhân viên để được tư vấn áp dụng ưu đãi phù hợp</li>
+        </ul>
+        <div class="mt-6 flex flex-col sm:flex-row gap-3">
+            <a asp-controller="LienHe" asp-action="Index"
+               class="inline-flex items-center justify-center gap-2 bg-brand hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl text-sm transition-colors">
+                Liên hệ tư vấn
+            </a>
+            <a href="tel:0937907149"
+               class="inline-flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-100 text-gray-700 font-semibold px-6 py-3 rounded-xl text-sm transition-colors">
+                📞 0937 907 149
+            </a>
+        </div>
+    </div>
+
+</div>

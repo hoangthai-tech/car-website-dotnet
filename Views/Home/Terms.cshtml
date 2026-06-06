@@ -1,0 +1,67 @@
+@model CarWebsite.Models.TermsOfService?
+@{ ViewData["Title"] = "Điều Khoản Sử Dụng"; Layout = "~/Views/Shared/_Layout.cshtml"; }
+
+<div class="min-h-screen bg-gray-50 pt-20 pb-16 px-4">
+    <div class="max-w-4xl mx-auto">
+
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <div class="w-14 h-14 bg-brand rounded-2xl flex items-center justify-center mx-auto mb-5 shadow">
+                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <h1 class="text-3xl font-black text-navy">Điều Khoản Sử Dụng AutoHT ID</h1>
+            @if (Model != null)
+            {
+                <p class="text-gray-500 mt-2 text-sm">
+                    Phiên bản <strong>@Model.Version</strong> —
+                    Có hiệu lực từ <strong>@Model.EffectiveDate.ToString("dd/MM/yyyy")</strong>
+                </p>
+            }
+            else
+            {
+                <p class="text-gray-400 mt-2 text-sm">Đang cập nhật nội dung điều khoản...</p>
+            }
+        </div>
+
+        @if (Model != null)
+        {
+            <div class="bg-white rounded-2xl shadow-sm p-8 prose max-w-none">
+                @Html.Raw(Model.Content)
+            </div>
+        }
+        else
+        {
+            <div class="bg-white rounded-2xl shadow-sm p-12 text-center text-gray-400">
+                <svg class="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                <p>Nội dung điều khoản chưa được xuất bản. Vui lòng quay lại sau.</p>
+            </div>
+        }
+
+        <div class="flex gap-3 justify-center mt-8">
+            <a asp-controller="Account" asp-action="Register"
+               class="px-6 py-2.5 bg-brand text-white text-sm font-semibold rounded-xl hover:bg-red-700 transition-colors">
+                Đăng ký ngay
+            </a>
+            <a asp-controller="Home" asp-action="Index"
+               class="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors">
+                Về trang chủ
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .prose h2 { font-size: 1.15rem; font-weight: 800; color: #001C3D; margin: 1.5rem 0 0.5rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.4rem; }
+    .prose h3 { font-size: 1rem; font-weight: 700; color: #001C3D; margin: 1.2rem 0 0.4rem; }
+    .prose p  { margin: 0.5rem 0; color: #374151; line-height: 1.75; }
+    .prose ul { margin: 0.5rem 0 0.5rem 1.5rem; list-style: disc; color: #374151; }
+    .prose li { margin: 0.3rem 0; line-height: 1.65; }
+    .prose hr { border-color: #e5e7eb; margin: 1.5rem 0; }
+    .prose strong { color: #001C3D; }
+</style>

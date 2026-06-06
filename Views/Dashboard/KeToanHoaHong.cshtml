@@ -1,0 +1,96 @@
+@using CarWebsite.Models
+@{
+    ViewData["Title"] = "Hoa Hồng Nhân Viên — Kế Toán";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+
+    var staff    = (ViewBag.Staff   as List<User>)    ?? new List<User>();
+    var hoaHong  = ViewBag.HoaHong as System.Collections.IEnumerable;
+    var tiLe     = (decimal)(ViewBag.TiLeHoaHong ?? 1.5m);
+
+    // Build dict: StaffId → {SoHopDong, DoanhThu}
+    var hdDict   = new Dictionary<Guid, (int SoHD, long DT)>();
+    if (hoaHong != null)
+    {
+        foreach (dynamic row in hoaHong)
+        {
+            hdDict[(Guid)row.StaffId] = ((int)row.SoHopDong, (long)row.DoanhThu);
+        }
+    }
+}
+
+@if (TempData["Success"] != null) { <div class="bg-green-50 border border-green-200 text-green-800 rounded-xl p-3 mb-4 text-sm">@TempData["Success"]</div> }
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Tính Hoa Hồng Nhân Viên Kinh Doanh</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Tỷ lệ hoa hồng: <strong class="text-brand">@tiLe%</strong> doanh thu đơn hàng hoàn tất</p>
+    </div>
+    <form asp-action="KeToanTinhHoaHong" asp-controller="Dashboard" method="post" class="flex items-end gap-2">
+        @Html.AntiForgeryToken()
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Tháng</label>
+            <input type="number" name="month" min="1" max="12" value="@DateTime.Now.Month" class="w-20 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <div>
+            <label class="block text-xs font-semibold text-gray-600 mb-1">Năm</label>
+            <input type="number" name="year" min="2020" max="2030" value="@DateTime.Now.Year" class="w-24 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand/30" />
+        </div>
+        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-xl text-sm">Tính hoa hồng</button>
+    </form>
+</div>
+
+@if (!staff.Any())
+{
+    <div class="bg-white rounded-2xl p-12 text-center shadow-sm border border-gray-100">
+        <p class="text-gray-400">Chưa có nhân viên kinh doanh nào trong hệ thống.</p>
+    </div>
+}
+else
+{
+    <div class="grid grid-cols-1 gap-4">
+        @foreach (var u in staff)
+        {
+            var info   = hdDict.GetValueOrDefault(u.Id);
+            var soHD   = info.SoHD;
+            var dt     = info.DT;
+            var hoaHongTien = (long)(dt * (double)tiLe / 100);
+
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-6">
+                <div class="w-12 h-12 rounded-full bg-brand flex items-center justify-center text-white font-black text-lg flex-shrink-0">
+                    @u.Name[0]
+                </div>
+                <div class="flex-1">
+                    <p class="font-bold text-navy">@u.Name</p>
+                    <p class="text-xs text-gray-400">@Roles.DisplayName(u.Role) — @u.Branch</p>
+                </div>
+                <div class="text-center px-4">
+                    <p class="text-xs text-gray-400 mb-0.5">Hợp đồng</p>
+                    <p class="text-xl font-black text-navy">@soHD</p>
+                </div>
+                <div class="text-center px-4">
+                    <p class="text-xs text-gray-400 mb-0.5">Doanh thu</p>
+                    <p class="text-lg font-black text-blue-600">@((dt / 1_000_000).ToString("N0")) <span class="text-sm font-normal">tr.₫</span></p>
+                </div>
+                <div class="text-center px-4">
+                    <p class="text-xs text-gray-400 mb-0.5">Hoa hồng (@tiLe%)</p>
+                    <p class="text-lg font-black text-green-600">@((hoaHongTien / 1_000_000).ToString("N0")) <span class="text-sm font-normal">tr.₫</span></p>
+                </div>
+                <div class="flex-shrink-0">
+                    @if (soHD == 0)
+                    {
+                        <span class="text-xs px-3 py-1.5 rounded-full bg-gray-100 text-gray-500 font-semibold">Chưa có đơn</span>
+                    }
+                    else
+                    {
+                        <span class="text-xs px-3 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold">Có hoa hồng</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="mt-4 bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-700">
+        <strong>Lưu ý:</strong> Hoa hồng tính dựa trên tổng giá trị các hợp đồng mua xe đã hoàn tất mà nhân viên phụ trách.
+        Tỷ lệ hoa hồng có thể được điều chỉnh theo chính sách công ty.
+    </div>
+}

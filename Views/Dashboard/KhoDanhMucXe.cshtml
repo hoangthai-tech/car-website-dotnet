@@ -1,0 +1,87 @@
+@using CarWebsite.Models
+@model List<Car>
+@{
+    ViewData["Title"] = "Danh Mục Xe — Kho";
+    Layout = "~/Views/Shared/_DashboardLayout.cshtml";
+}
+
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="text-2xl font-black text-navy">Danh Mục Xe</h1>
+        <p class="text-sm text-gray-400 mt-0.5">Số khung, số máy, dòng xe, màu sắc, trạng thái</p>
+    </div>
+</div>
+
+<div class="grid grid-cols-4 gap-4 mb-6">
+    @{
+        var approved = Model.Count(c => c.Status == "approved");
+        var pending  = Model.Count(c => c.Status == "pending");
+        var tongTon  = Model.Sum(c => c.Stock);
+    }
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng danh mục</p>
+        <p class="text-3xl font-black text-navy">@Model.Count</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Đã duyệt</p>
+        <p class="text-3xl font-black text-green-600">@approved</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Chờ duyệt</p>
+        <p class="text-3xl font-black text-yellow-600">@pending</p>
+    </div>
+    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <p class="text-xs text-gray-400 mb-1">Tổng tồn kho</p>
+        <p class="text-3xl font-black text-blue-600">@tongTon</p>
+    </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Xe</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Hãng</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Loại</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Năm</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Nhiên liệu</th>
+                    <th class="text-center px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Tồn kho</th>
+                    <th class="text-left px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Trạng thái</th>
+                    <th class="text-right px-5 py-3 font-semibold text-gray-500 text-xs uppercase">Giá</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @foreach (var c in Model)
+                {
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3.5">
+                            <div class="flex items-center gap-3">
+                                <img src="@c.Image" alt="" class="w-12 h-8 object-cover rounded-lg" />
+                                <p class="font-semibold text-navy">@c.Name</p>
+                            </div>
+                        </td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Brand</td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Type</td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Year</td>
+                        <td class="px-5 py-3.5 text-gray-600">@c.Fuel</td>
+                        <td class="px-5 py-3.5 text-center">
+                            <span class="font-bold text-navy">@c.Stock</span>
+                        </td>
+                        <td class="px-5 py-3.5">
+                            <span class="text-xs px-2.5 py-1 rounded-full font-semibold
+                                @(c.Status == "approved" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700")">
+                                @(c.Status == "approved" ? "Đã duyệt" : "Chờ duyệt")
+                            </span>
+                        </td>
+                        <td class="px-5 py-3.5 text-right font-semibold text-navy text-xs">@c.PriceDisplay</td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="8" class="px-5 py-10 text-center text-gray-400">Chưa có xe nào trong danh mục.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
